@@ -3,4 +3,8 @@ Workload-kit
 
 Various utilities for generating workloads.
 
+program    | description
+-------------------------------------------------------------------------------
+iosplit    | create offset writes into a file
+proclife   | trigger every possible process states
 
