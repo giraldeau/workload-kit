@@ -1,6 +1,8 @@
 AC_INIT([Workload kit], 0.1)
 AM_INIT_AUTOMAKE
 
+# FIXME FG 2011-01-11: add detect for sys/types.h unistd.h
+
 #### ALSA support (optional) ####
 
 ASOUNDLIB=asound
