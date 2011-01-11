@@ -1,3 +1,24 @@
+/*
+ * Proclife. 
+ * This program should run through the majority of states a process
+ * can enter. 
+ * 
+ * This file is part of Proclife. Proclife is free software: you can
+ * redistribute it and/or modify it under the terms of the GNU 
+ * General Public License as published by the Free Software Foundation, 
+ * version 2.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+ * details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * this program; if not, write to the Free Software Foundation, Inc., 51
+ * Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ */
+
+
 #include <sys/wait.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -12,16 +33,6 @@ const int rate = 8000;
 const int bits = sizeof( unsigned char ) * 8 ; 
 const int channels = 1; 
 
-void rename_process( int currentId, char **argv) 
-{
-	char newName[80] ; 
-	int argvSize ; 
-	sprintf( newName, "Trace Child %d" , currentId) ;
-	argvSize = strlen( argv[ 0 ] );
-	strncpy( argv[0] , newName, argvSize ) ;
-	
-}
-
 void allocate_memory()
 {
 	int *dataDump;
@@ -32,6 +43,7 @@ void allocate_memory()
 		dataDump = (int *)malloc( i << 16 ); 
 		usleep( 100); 
 		free( dataDump);
+		usleep( 100); 
 	}
 }
 
@@ -115,18 +127,14 @@ void play_sound( unsigned char *soundByte, int samples )
 		snd_pcm_close (playback_handle);
 }
 
-void call_ls()
-{
-	execl ("/bin/ls", "ls", "-1", (char *)0);
-}
-
 int main(int argc, char **argv)
 {
         pid_t pids[NUM_PROCESSES];
         int i;
 	int samples = NUM_SAMPLES;
+	char name_backup[80];
 	unsigned char soundByte[NUM_SAMPLES]; 
-
+	strncpy( name_backup, argv[0], 80);
 	
 	/* Make some forks */
         for (i = NUM_PROCESSES-1; i >= 0; --i) 
@@ -135,11 +143,11 @@ int main(int argc, char **argv)
 		sprintf( childName, "trace-child_%d" , i);
 		strncpy( argv[0], childName , strlen(argv[0])); 
                 pids[i] = fork();
+		strncpy( argv[0] , name_backup,strlen(name_backup));
 		if( pids[i] == 0)
 		{
 			
 			wait_for_sync( i );
-			rename_process( i , argv );
 			set_up_sound( soundByte, samples, i ) ;
 			allocate_memory();
 			write_to_file( soundByte, samples, i ) ;
@@ -160,6 +168,13 @@ int main(int argc, char **argv)
                 waitpid(pids[i], NULL, 0);
 		printf( "Done!\n" );
 	}
-
+	usleep( 250000 );
+	{
+		char *args[] = {"/bin/ls", "-r", "-t", "-l", (char *) 0 };
+		execv("/bin/ls", args);
+	}
+	/* should not get here. */
+	
         return 0;
 }
+
