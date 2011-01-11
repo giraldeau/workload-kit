@@ -5,12 +5,14 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <fcntl.h>
+#include <errno.h>
 
 int main(int argc, char **argv) {
 
 	int buf_size = 1048576;
 	int nb_blocs = 20;
 	int max_size = buf_size * nb_blocs;
+	blkcnt_t blk1, blk2, blk3;
 
 	// | O_DIRECT doesn't work
 
@@ -20,8 +22,17 @@ int main(int argc, char **argv) {
 	int x;
 	char *buf = calloc(buf_size, 1);
 
-	if(truncate(path1, 0) < 0) {
-		perror("truncate");
+	/* if the file exists, truncate it */
+	struct stat st1;
+	int res;
+	if ((res = stat(path1, &st1)) < 0) {
+		if (res != ENOENT) {
+			perror("stat");
+		}
+	} else {
+		if(truncate(path1, 0) < 0) {
+			perror("truncate");
+		}
 	}
 
 	for(x=0; x<nb_blocs; x++) {
@@ -41,10 +52,16 @@ int main(int argc, char **argv) {
 		perror("write");
 	}
 
+	/* check the size on disk */
+	if ((res = stat(path1, &st1)) < 0) {
+		perror("stat");
+	}
+
+	printf("st_blocks = %d\n", (int)st1.st_blocks * 512);
+	printf("st_size   = %d\n", (int)st1.st_size);
+
 	close(fd1);
 	free(buf);
 
-	printf("test\n");
 	return 0;
-
 }
