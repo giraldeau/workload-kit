@@ -1,0 +1,13 @@
+#!/bin/sh
+
+EXE=$(basename $1)
+NAME=trace-$EXE
+TRACE_PATH=$(pwd)/$NAME
+if [ -e $TRACE_PATH ]; then
+    echo "$TRACE_PATH already exists, delete it first"
+    exit 1
+fi
+lttctl -o channel.all.bufnum=8 -C -w $TRACE_PATH $NAME
+sleep 0.1
+$@
+lttctl -D $NAME

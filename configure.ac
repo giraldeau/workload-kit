@@ -1,7 +1,8 @@
 AC_INIT([Workload kit], 0.1)
 AM_INIT_AUTOMAKE
 
-# FIXME FG 2011-01-11: add detect for sys/types.h unistd.h
+AC_CHECK_HEADERS(sys/types.h unistd.h fcntl.h strings.h pthread.h time.h errno.h stdarg.h limits.h signal.h stdlib.h)
+AC_CHECK_LIB(pthread, pthread_create)
 
 #### ALSA support (optional) ####
 
