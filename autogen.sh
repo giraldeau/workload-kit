@@ -44,7 +44,7 @@ DIE=0
 
 (autoconf --version) < /dev/null > /dev/null 2>&1 || {
 	echo
-	echo "You must have autoconf installed to compile augeas."
+	echo "You must have autoconf installed to compile."
 	echo "Download the appropriate package for your distribution,"
 	echo "or see http://www.gnu.org/software/autoconf"
 	DIE=1
@@ -53,7 +53,7 @@ DIE=0
 (automake --version) < /dev/null > /dev/null 2>&1 || {
 	echo
 	DIE=1
-	echo "You must have automake installed to compile augeas."
+	echo "You must have automake installed to compile."
 	echo "Download the appropriate package for your distribution,"
 	echo "or see http://www.gnu.org/software/automake"
 }
@@ -87,5 +87,5 @@ fi
 
 $srcdir/configure "${CF_ARGS[@]}" && {
     echo
-    echo "Now type 'make' to compile augeas."
+    echo "Now type 'make' to compile."
 }
