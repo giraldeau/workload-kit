@@ -1,9 +1,10 @@
-bin_PROGRAMS = iosplit proclife bossthread deadlock dthread
+bin_PROGRAMS = iosplit proclife bossthread deadlock dthread inception
 iosplit_SOURCES = iosplit.c
 bossthread_SOURCES = bossthread.c calibrate.c
 bossthread_LDFLAGS = $(UST_LIBS)
 deadlock_SOURCES = deadlock.c
 dthread_SOURCES = dthread.c
+inception_SOURCES = inception.c
 
 proclife_SOUCES = proclife.c
 proclife_LDFLAGS = $(ASOUNDLIB_LIBS)
