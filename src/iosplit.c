@@ -6,62 +6,95 @@
 #include <sys/types.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <error.h>
+#include <getopt.h>
+
+#define PROGNAME "iosplit"
+#define VAL_VERSION "1.0"
+
+/* Global variables */
+
+static const char *const progname = PROGNAME;
+
+struct vars {
+	char *workdir;
+	int size;
+	int count;
+};
+
+__attribute__((noreturn))
+static void usage(void) {
+    fprintf(stderr, "Usage: %s [OPTIONS] [COMMAND]\n", progname);
+    fprintf(stderr, "\nOptions:\n\n");
+    fprintf(stderr, "  --size     set size of blocs\n");
+    fprintf(stderr, "  --count    set number of blocs\n");
+    fprintf(stderr, "  --dir      set the working dir\n");
+    exit(EXIT_FAILURE);
+}
+
+static void parse_opts(int argc, char **argv, struct vars *vars) {
+    int opt;
+    size_t loadpathlen = 0;
+
+    struct option options[] = {
+        { "help",      0, 0, 'h' },
+        { "size",      0, 0, 's' },
+        { "count",     0, 0, 'c' },
+        { "dir",       0, 0, 'd' },
+        { 0, 0, 0, 0}
+    };
+    int idx;
+
+    while ((opt = getopt_long(argc, argv, "hs:c:d:", options, &idx)) != -1) {
+        switch(opt) {
+        case 's':
+            vars->size = atoi(optarg);
+            break;
+        case 'c':
+            vars->count = atoi(optarg);
+            break;
+        case 'd':
+            vars->workdir = optarg;
+            break;
+        case 'h':
+        	usage();
+            break;
+        default:
+        	usage();
+        	break;
+        }
+    }
+
+    /* default values*/
+    if (vars->workdir == NULL) {
+    	vars->workdir = PROGNAME "-data";
+    }
+}
+
+int make_work_dir(char *dir) {
+	int status;
+	struct stat st;
+
+	if(stat(dir, &st) == 0 && S_ISDIR(st.st_mode))
+		return 0;
+
+	status = mkdir(dir, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+	if (status < 0) {
+		error(0, errno, "error creating directory %s", dir);
+		return -1;
+	}
+
+}
 
 int main(int argc, char **argv) {
 
-	int buf_size = 1048576;
-	int nb_blocs = 20;
-	int max_size = buf_size * nb_blocs;
-	blkcnt_t blk1, blk2, blk3;
+	struct vars vars;
 
-	// | O_DIRECT doesn't work
+	parse_opts(argc, argv, &vars);
 
-	const char *path1 = "bidon1.data";
-	int fd1 = open(path1, O_CREAT | O_RDWR | O_SYNC, S_IRUSR|S_IWUSR);
+	if (make_work_dir(vars.workdir) < 0)
+		return EXIT_FAILURE;
 
-	int x;
-	char *buf = calloc(buf_size, 1);
+	return EXIT_SUCCESS;
 
-	/* if the file exists, truncate it */
-	struct stat st1;
-	int res;
-	if ((res = stat(path1, &st1)) < 0) {
-		if (res != ENOENT) {
-			perror("stat");
-		}
-	} else {
-		if(truncate(path1, 0) < 0) {
-			perror("truncate");
-		}
-	}
-
-	for(x=0; x<nb_blocs; x++) {
-		if (write(fd1, buf, buf_size) < 0) {
-			perror("write zero");
-		}
-	}
-
-	off_t offset;
-	if ((offset = lseek(fd1, max_size, SEEK_SET)) < 0) {
-		perror("seek");
-	}
-
-	int i = 40;
-
-	if (write(fd1, &i, sizeof(int))<0) {
-		perror("write");
-	}
-
-	/* check the size on disk */
-	if ((res = stat(path1, &st1)) < 0) {
-		perror("stat");
-	}
-
-	printf("st_blocks = %d\n", (int)st1.st_blocks * 512);
-	printf("st_size   = %d\n", (int)st1.st_size);
-
-	close(fd1);
-	free(buf);
-
-	return 0;
 }
