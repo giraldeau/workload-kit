@@ -70,7 +70,7 @@ fi
 
 mkdir -p $BUILD_AUX
 
-#$LIBTOOLIZE --copy --force
+$LIBTOOLIZE --copy --force
 #./bootstrap $GNULIB_SRCDIR
 #aclocal -I gnulib/m4
 aclocal
