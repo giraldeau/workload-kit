@@ -5,7 +5,7 @@ Various utilities for generating workloads.
 
 program    | description
 -------------------------------------------------------------------------------
-iosplit    | create offset writes into a file
+ioburst    | create writes into a file
 proclife   | trigger every possible process states
 dthread    | creates a thread that create an other thread (link with -lpthread)
 deadlock   | creates a deadlock between two threads

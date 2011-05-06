@@ -1,6 +1,5 @@
-<<<<<<< HEAD
-bin_PROGRAMS = iosplit proclife bossthread deadlock dthread inception srvhog clihog lockfight
-iosplit_SOURCES = iosplit.c
+bin_PROGRAMS = ioburst proclife bossthread deadlock dthread inception srvhog clihog lockfight
+ioburst_SOURCES = ioburst.c
 bossthread_SOURCES = bossthread.c calibrate.c
 bossthread_LDFLAGS = $(UST_LIBS)
 deadlock_SOURCES = deadlock.c
