@@ -7,6 +7,7 @@
 #include <sys/types.h> 
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <netdb.h>
 #include "calibrate.h"
 
 #define MSLEEP 100
@@ -50,23 +51,36 @@ int main(int argc, char *argv[])
      char buffer[256];
      struct sockaddr_in serv_addr, cli_addr;
      int n;
-     if (argc < 2) {
-         fprintf(stderr,"ERROR, no port provided\n");
+     struct hostent *server;
+
+     if (argc < 3) {
+         fprintf(stderr,"ERROR, no bind address and/or port provided\n");
          exit(1);
      }
 
      printf("server starting\n");
 	 // 100ms by default
 	 unsigned long count = calibrate(UHOG);
-     sockfd = socket(AF_INET, SOCK_STREAM, 0);
+
+	 sockfd = socket(AF_INET, SOCK_STREAM, 0);
      if (sockfd < 0) 
         error("ERROR opening socket");
+
      if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, (char *) &yes, sizeof(yes)) < 0)
     	 error("ERROR while setting socket option");
+
+     server = gethostbyname(argv[1]);
+     if (server == NULL) {
+         fprintf(stderr,"ERROR, no such host\n");
+         exit(0);
+     }
      bzero((char *) &serv_addr, sizeof(serv_addr));
-     portno = atoi(argv[1]);
+     portno = atoi(argv[2]);
      serv_addr.sin_family = AF_INET;
-     serv_addr.sin_addr.s_addr = INADDR_ANY;
+     //serv_addr.sin_addr.s_addr = INADDR_ANY;
+     bcopy((char *)server->h_addr,
+          (char *)&serv_addr.sin_addr.s_addr,
+          server->h_length);
      serv_addr.sin_port = htons(portno);
      if (bind(sockfd, (struct sockaddr *) &serv_addr,
               sizeof(serv_addr)) < 0) 
