@@ -18,9 +18,7 @@ struct vars {
 	char *path;
 };
 
-int lock_file(char *path) {
-
-	int fd;
+int lock_file(int fd) {
 	struct flock lock;
 
 	lock.l_type = F_WRLCK;
@@ -28,18 +26,30 @@ int lock_file(char *path) {
 	lock.l_whence = SEEK_SET;
 	lock.l_len = 0;
 
-
-	if ((fd = open(path, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)) == -1) {
-		perror("Can't open output file");
-		return -1;
-	}
-
 	printf("Try to lock file...\n");
 	if (fcntl(fd, F_SETLKW, &lock) < 0) {
 		perror("fcntl error");
 		return -1;
 	}
 	printf("File lock succeeded\n");
+
+	return 0;
+}
+
+int unlock_file(int fd) {
+	struct flock lock;
+
+	lock.l_type = F_UNLCK;
+	lock.l_start = 0;
+	lock.l_whence = SEEK_SET;
+	lock.l_len = 0;
+
+	printf("Try to unlock file...\n");
+	if (fcntl(fd, F_SETLKW, &lock) < 0) {
+		perror("fcntl error");
+		return -1;
+	}
+	printf("File unlock succeeded\n");
 
 	return 0;
 }
@@ -103,15 +113,23 @@ static int parse_opts(int argc, char **argv, struct vars *vars) {
 
 int main(int argc, char **argv) {
 
+	int fd;
 	struct vars v;
 
 	if (parse_opts(argc, argv, &v) < 0) {
-		printf("Error: missing arguments");
+		printf("Error: missing arguments\n");
 		usage();
 		return -1;
 	}
 
-	lock_file(v.path);
+	if ((fd = open(v.path, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)) == -1) {
+		perror("Can't open output file");
+		return -1;
+	}
+
+	lock_file(fd);
+	do_sleep(v.mili);
+	unlock_file(fd);
 	do_sleep(v.mili);
 
 	return 0;
