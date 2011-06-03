@@ -12,7 +12,8 @@ lockfight_SOURCES = lockfight.c
 noinst_LTLIBRARIES = libcyg.la
 
 libcyg_la_SOURCES = cyg.c
+libcyg_la_LDFLAGS = $(UST_LIBS)
 
 functrace_SOURCES = functrace.c
 functrace_CFLAGS = -finstrument-functions
-functrace_LDFLAGS = -rdynamic $(UST_LIBS) libcyg.la
+functrace_LDFLAGS = -rdynamic libcyg.la
