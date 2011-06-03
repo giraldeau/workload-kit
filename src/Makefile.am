@@ -1,4 +1,4 @@
-bin_PROGRAMS = ioburst proclife bossthread deadlock dthread inception srvhog clihog lockfight
+bin_PROGRAMS = ioburst bossthread deadlock dthread inception srvhog clihog lockfight functrace
 ioburst_SOURCES = ioburst.c
 bossthread_SOURCES = bossthread.c calibrate.c
 bossthread_LDFLAGS = $(UST_LIBS)
@@ -9,8 +9,10 @@ srvhog_SOURCES = srvhog.c calibrate.h calibrate.c
 clihog_SOURCES = clihog.c
 lockfight_SOURCES = lockfight.c
 
-proclife_SOUCES = proclife.c
-proclife_LDFLAGS = $(ASOUNDLIB_LIBS)
-proclife_CFLAGS = $(ASOUNDLIB_CFLAGS)
+noinst_LTLIBRARIES = libcyg.la
 
+libcyg_la_SOURCES = cyg.c
 
+functrace_SOURCES = functrace.c
+functrace_CFLAGS = -finstrument-functions
+functrace_LDFLAGS = -rdynamic $(UST_LIBS) libcyg.la
