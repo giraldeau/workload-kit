@@ -1,4 +1,4 @@
-bin_PROGRAMS = ioburst bossthread deadlock dthread inception srvhog clihog lockfight functrace
+bin_PROGRAMS = ioburst bossthread deadlock dthread inception srvhog clihog lockfight functrace-ust functrace-plain
 ioburst_SOURCES = ioburst.c
 bossthread_SOURCES = bossthread.c calibrate.c
 bossthread_LDFLAGS = $(UST_LIBS)
@@ -14,6 +14,8 @@ noinst_LTLIBRARIES = libcyg.la
 libcyg_la_SOURCES = cyg.c
 libcyg_la_LDFLAGS = $(UST_LIBS)
 
-functrace_SOURCES = functrace.c
-functrace_CFLAGS = -finstrument-functions
-functrace_LDFLAGS = -rdynamic libcyg.la
+functrace_ust_SOURCES = functrace.c
+functrace_ust_CFLAGS = -finstrument-functions
+functrace_ust_LDFLAGS = -rdynamic libcyg.la
+
+functrace_plain_SOURCES = functrace.c

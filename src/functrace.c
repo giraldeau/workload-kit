@@ -8,36 +8,37 @@
 
 int foo(int n)
 {
-	n--; 
-	if(n > 0 ) 
-		return bar( n);
-	else
-		return 0;
+	int i, x;
+
+	for (i=0; i<n; i++)
+		x = bar(i);
+	return x;
 }
 
-int bar( int n)
+int bar(int n)
 {
-	int i =0;
-	while( i < n ) 
+	int i = 0;
+	while(i < n)
 	{
 		i = i << 1; 
 		baz(i++);
 	}
-	return foo(n);
+	return i;
 }
 
-int baz( int n) 
+int baz(int n)
 {
-	n *= 3; 
-	n /= 4; 
+	n *= 3;
+	n /= 4;
 	return n; 
 }
 
-
-
-int main()
+int main(int argc, char **argv)
 {
-	int n = 100;
-	foo(n);
+	if (argc < 2)
+		return -1;
+
+	int n = atoi(argv[1]);
+	printf("result %d\n", foo(n));
 	return 0; 
 }
