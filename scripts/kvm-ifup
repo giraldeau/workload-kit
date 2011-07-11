@@ -1,0 +1,5 @@
+witch=br0
+/sbin/ifconfig $1 0.0.0.0 up
+/usr/sbin/brctl addif ${switch} $1
+exit 0
+

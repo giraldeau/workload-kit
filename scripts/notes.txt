@@ -1,0 +1,27 @@
+# commands to run lttng cluster
+
+# some paths are hard coded and must be adjusted. The main setup uses KVM
+# virtual machines controled by SSH on an ethernet bridge. At boot, a script
+# sends the IP address of the client to the host, because addresses are
+# allocated by DHCP. Files can be transfered after the tracing with rsync. 
+
+# needs dhcp3-server ubuntu-vm-builder bridge-utils qemu-kvm rsync sshfs dsh and probably others
+
+# start virtual network
+sudo kvm-net
+
+# start cluster
+sudo ./start-ltt-cluster.sh
+
+# verify quorum
+dsh -c -f members uptime
+
+# prepare lttng
+dsh -c -f members /ltt/bench/scripts/load-modules.sh 
+dsh -c -f members ltt-armall -n
+
+# do the trace of pingpong
+dsh -c -f members /ltt/bench/scripts/trace-cmd-cluster.sh /ltt/bench/scripts/pingpong.py -f /ltt/cluster/members
+
+# load the trace in lttv
+./lttv-cluster /srv/ltt/traces
