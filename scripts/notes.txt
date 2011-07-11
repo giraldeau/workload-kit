@@ -4,8 +4,17 @@
 # virtual machines controled by SSH on an ethernet bridge. At boot, a script
 # sends the IP address of the client to the host, because addresses are
 # allocated by DHCP. Files can be transfered after the tracing with rsync. 
+# Scripts are shared to client machines with NFS. On fstab on the client:
+#
+# 172.16.0.1:/srv/ltt /ltt nfs soft 0 0
+# 
+# On the server:
+#
+# /srv 172.16.0.0/255.255.255.0(rw,sync,no_subtree_check,no_root_squash)
+#
+# make scripts available in this directory. 
 
-# needs dhcp3-server ubuntu-vm-builder bridge-utils qemu-kvm rsync sshfs dsh and probably others
+# needs dhcp3-server ubuntu-vm-builder bridge-utils qemu-kvm rsync sshfs dsh nfs-kernel-server and probably others on the host, ssh on host and client
 
 # start virtual network
 sudo kvm-net

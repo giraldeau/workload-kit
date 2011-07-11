@@ -1,0 +1,8 @@
+#!/bin/sh
+
+TRACES=""
+for i in $(ls -1d $1/*); do
+    TRACES=$TRACES" -t $i "
+done
+
+lttv-gui --sync --sync-stats $TRACES
