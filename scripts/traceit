@@ -2,7 +2,7 @@
 
 EXE=$(basename $1)
 NAME=trace-$EXE
-TRACE_PATH=$(pwd)/$NAME
+TRACE_PATH=/tmp/$NAME
 if [ -e $TRACE_PATH ]; then
 	rm -rf $TRACE_PATH
 fi
