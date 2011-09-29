@@ -35,14 +35,6 @@ int do_sleep(int mili) {
     printf("delay=%lu\n", t2.tv_usec - t1.tv_usec);
 }
 
-int do_hog(long x) {
-	volatile y = 0, i = 0;
-	for(i=0;i<x;i++) {
-		y++;
-	}
-	return 0;
-}
-
 int main(int argc, char *argv[])
 {
      int sockfd, newsockfd, portno;

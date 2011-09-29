@@ -13,5 +13,6 @@
 /* calibrate function returns the average number at
  * which the CPU is able to count in USEC interval */
 unsigned long calibrate(suseconds_t usec);
+int do_hog(long x);
 
 #endif /* CALIBRATE_H_ */

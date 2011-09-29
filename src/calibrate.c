@@ -21,6 +21,14 @@
 
 static volatile sig_atomic_t run;
 
+int do_hog(long x) {
+	volatile y = 0, i = 0;
+	for(i=0;i<x;i++) {
+		y++;
+	}
+	return 0;
+}
+
 static void signalhandler (int signr) {
     (void) signr;
     run = 0;
