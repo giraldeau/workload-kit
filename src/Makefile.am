@@ -1,4 +1,4 @@
-bin_PROGRAMS = ioburst bossthread deadlock dthread inception srvhog clihog lockfight functrace-ust functrace-plain cpm1
+bin_PROGRAMS = ioburst bossthread deadlock dthread inception srvhog clihog lockfight functrace-ust functrace-plain cpm1 cpm2
 ioburst_SOURCES = ioburst.c
 bossthread_SOURCES = bossthread.c
 bossthread_LDFLAGS = $(UST_LIBS)
@@ -28,6 +28,9 @@ functrace_plain_SOURCES = functrace.c
 
 cpm1_SOURCES = cpm1.c
 cpm1_LDADD = libwk.a
+
+cpm2_SOURCES = cpm2.c
+cpm2_LDADD = libwk.a
 
 noinst_LIBRARIES = libwk.a
 
