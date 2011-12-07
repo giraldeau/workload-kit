@@ -7,10 +7,10 @@
  *  Produces following execution path:
  *
  *	master  ====+======----+===
- *              |          |
- *  child 1     +=+--+=====+
- *                |  |
- *  child 2       +==+
+ *                  |          |
+ *  child 1         +=+--+=====+
+ *                    |  |
+ *  child 2           +==+
  *
  *  The resulting critical path is master:child1:child2:child1:master
  *  and not master:child1:master, because if child2 is optimized, the
