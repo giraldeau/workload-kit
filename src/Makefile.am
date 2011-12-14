@@ -1,5 +1,7 @@
-bin_PROGRAMS = ioburst bossthread deadlock dthread inception srvhog clihog lockfight functrace-ust functrace-plain cpm1 cpm2
+bin_PROGRAMS = ioburst bossthread deadlock dthread inception srvhog clihog lockfight functrace-ust functrace-plain cpm1 cpm2 cpm3
 ioburst_SOURCES = ioburst.c
+ioburst_LDADD = libwk.a
+
 bossthread_SOURCES = bossthread.c
 bossthread_LDFLAGS = $(UST_LIBS)
 bossthread_LDADD = libwk.a
@@ -9,11 +11,16 @@ deadlock_SOURCES = deadlock.c
 dthread_SOURCES = dthread.c
 
 inception_SOURCES = inception.c
+inception_LDADD = libwk.a
+
 srvhog_SOURCES = srvhog.c
 srvhog_LDADD = libwk.a
 
 clihog_SOURCES = clihog.c
+clihog_LDADD = libwk.a
+
 lockfight_SOURCES = lockfight.c
+lockfight_LDADD = libwk.a
 
 noinst_LTLIBRARIES = libcyg.la
 
@@ -32,6 +39,9 @@ cpm1_LDADD = libwk.a
 cpm2_SOURCES = cpm2.c
 cpm2_LDADD = libwk.a
 
+cpm3_SOURCES = cpm3.c
+cpm3_LDADD = libwk.a
+
 noinst_LIBRARIES = libwk.a
 
-libwk_a_SOURCES = calibrate.h calibrate.c
+libwk_a_SOURCES = calibrate.h calibrate.c utils.c utils.h

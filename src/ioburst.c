@@ -116,7 +116,7 @@ int do_io(int fd, int size, int count) {
 
 	for (i = 0; i < count; i++) {
 		if (write(fd, buf, size) < 0) {
-			error(0, errno, "error in writing");
+			throw(0, errno, "error in writing");
 			return -1;
 		}
 	}
@@ -142,7 +142,7 @@ int main(int argc, char **argv) {
 	}
 	int out = open(vars->file, out_flags, perms);
 	if (out < 0) {
-		error(0, errno, "error opening output file %s", vars->file);
+		throw(0, errno, "error opening output file %s", vars->file);
 		return EXIT_FAILURE;
 	}
 

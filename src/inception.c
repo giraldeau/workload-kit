@@ -14,6 +14,7 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <sys/time.h>
+#include "utils.h"
 
 int mili = 0;
 int children = 0;
@@ -26,7 +27,7 @@ void usage(char *prog) {
 
 int do_run() {
 	/* self sleep first */
-	if (do_sleep() < 0) {
+	if (do_sleep(mili) < 0) {
 		error(0, errno, "error in do_sleep");
 		return -1;
 	}
@@ -36,22 +37,6 @@ int do_run() {
 		error(0, errno, "error in span_children");
 		return -1;
 	}
-}
-
-int do_sleep() {
-
-	struct timespec t;
-	struct timeval t1, t2;
-	t.tv_sec = mili / 1000;
-	t.tv_nsec = (mili % 1000) * 1000000;
-
-    printf("t.tv_sec=%lu t.tv_nsec=%lu\n", t.tv_sec, t.tv_nsec);
-    gettimeofday(&t1, NULL);
-	if (nanosleep(&t, NULL) < 0) {
-		return -1;
-	}
-    gettimeofday(&t2, NULL);
-    printf("delay=%lu\n", t2.tv_usec - t1.tv_usec);
 }
 
 int spawn_child() {

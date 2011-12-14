@@ -8,32 +8,11 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
+#include "utils.h"
 #include "calibrate.h"
 
 #define MSLEEP 100
 #define UHOG 100000
-
-void error(const char *msg)
-{
-    perror(msg);
-    exit(1);
-}
-
-int do_sleep(int mili) {
-
-	struct timespec t;
-	struct timeval t1, t2;
-	t.tv_sec = mili / 1000;
-	t.tv_nsec = (mili % 1000) * 1000000;
-
-    printf("t.tv_sec=%lu t.tv_nsec=%lu\n", t.tv_sec, t.tv_nsec);
-    gettimeofday(&t1, NULL);
-	if (nanosleep(&t, NULL) < 0) {
-		return -1;
-	}
-    gettimeofday(&t2, NULL);
-    printf("delay=%lu\n", t2.tv_usec - t1.tv_usec);
-}
 
 int main(int argc, char *argv[])
 {
@@ -56,10 +35,10 @@ int main(int argc, char *argv[])
 
 	 sockfd = socket(AF_INET, SOCK_STREAM, 0);
      if (sockfd < 0) 
-        error("ERROR opening socket");
+        throw("ERROR opening socket");
 
      if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, (char *) &yes, sizeof(yes)) < 0)
-    	 error("ERROR while setting socket option");
+    	 throw("ERROR while setting socket option");
 
      server = gethostbyname(argv[1]);
      if (server == NULL) {
@@ -76,7 +55,7 @@ int main(int argc, char *argv[])
      serv_addr.sin_port = htons(portno);
      if (bind(sockfd, (struct sockaddr *) &serv_addr,
               sizeof(serv_addr)) < 0) 
-              error("ERROR on binding");
+              throw("ERROR on binding");
      printf("server waiting cmd\n");
      listen(sockfd,5);
      clilen = sizeof(cli_addr);
@@ -84,10 +63,10 @@ int main(int argc, char *argv[])
                  (struct sockaddr *) &cli_addr, 
                  &clilen);
      if (newsockfd < 0) 
-          error("ERROR on accept");
+          throw("ERROR on accept");
      bzero(buffer,256);
      n = read(newsockfd,buffer,255);
-     if (n < 0) error("ERROR reading from socket");
+     if (n < 0) throw("ERROR reading from socket");
      printf("server recv cmd: %s (%d)\n",buffer,n);
      if (strncmp(buffer, "sleep", n) == 0) {
     	 printf("do_sleep\n");
@@ -99,7 +78,7 @@ int main(int argc, char *argv[])
     	 printf("unknown command\n");
      }
      n = write(newsockfd,"done",18);
-     if (n < 0) error("ERROR writing to socket");
+     if (n < 0) throw("ERROR writing to socket");
      close(newsockfd);
      close(sockfd);
      return 0; 

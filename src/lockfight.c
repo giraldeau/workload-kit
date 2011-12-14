@@ -11,6 +11,8 @@
 #include <fcntl.h>
 #include <getopt.h>
 
+#include "utils.h"
+
 char *progname = "lockfight";
 
 struct vars {
@@ -52,17 +54,6 @@ int unlock_file(int fd) {
 	printf("File unlock succeeded\n");
 
 	return 0;
-}
-
-int do_sleep(int mili) {
-
-	struct timespec t;
-	t.tv_sec = mili / 1000;
-	t.tv_nsec = (mili % 1000) * 1000000;
-
-	if (nanosleep(&t, NULL) < 0) {
-		return -1;
-	}
 }
 
 __attribute__((noreturn))
