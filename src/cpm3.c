@@ -32,17 +32,43 @@
 
 #define DEFAULT_HOST "localhost"
 #define DEFAULT_PORT 7373
-#define SIZE1 1024
-#define SIZE2 512
+#define SIZE 1024
 #define SERVER "server"
 #define CLIENT "client"
-
+#define DELAY 10
 long unit = 0;
 
 void server();
 void client();
 
+typedef struct ctx {
+	int id;
+	const char *who;
+	int sock;
+	char *buf;
+	int size;
+	long int mili;
+} ctx_t;
+
 typedef void (*func)(void);
+typedef void (*tx_hdl)(ctx_t *, int, int);
+
+ctx_t *make_ctx(int size)
+{
+	ctx_t *ctx = calloc(1, sizeof(ctx_t));
+	ctx->buf = malloc(size);
+	ctx->size = size;
+	return ctx;
+}
+
+void free_ctx(ctx_t *ctx)
+{
+	if (ctx != NULL) {
+		if (ctx->buf != NULL)
+			free(ctx->buf);
+		free(ctx);
+	}
+}
 
 void spawn(func f, pid_t *pid)
 {
@@ -62,6 +88,7 @@ void master()
 	// handle error properly, otherwise
 	/* start the server */
 	spawn(server, &server_pid);
+	do_sleep(10);
 
 	/* start the client */
 	spawn(client, &client_pid);
@@ -139,87 +166,106 @@ int make_server_socket()
     return newsockfd;
 }
 
-void do_send(int id, char *who, int sock, char *buf, int size)
+void do_send(ctx_t *ctx, int size, int id)
 {
-	ssize_t n = send(sock, buf, size, 0);
-	printf("%d %s send %ld\n", id, who, n);
+	ssize_t n = send(ctx->sock, ctx->buf, size, 0);
+	printf("%d %s send %ld\n", id, 	ctx->who, n);
+	do_hog(ctx->mili);
+}
+
+void do_recv(ctx_t *ctx, int size, int id)
+{
+	ssize_t n = recv(ctx->sock, ctx->buf, size, 0);
+	printf("%d %s recv %ld\n", id, 	ctx->who, n);
+	do_hog(ctx->mili);
+}
+
+void do_server_run(ctx_t *ctx)
+{
+	int full = ctx->size;
+	int half = ctx->size >> 1;
+	int cnt = 0;
+
+	/* 1 */
+	do_send(ctx, full, cnt++);
+
+	/* 3 */
+	do_send(ctx, half, cnt);
+	do_send(ctx, half, cnt++);
+
+	/* 4 */
+	do_send(ctx, full, cnt++);
+
 	do_sleep(50);
 }
 
-void do_recv(int id, char *who, int sock, char *buf, int size)
+void do_client_run(ctx_t *ctx)
 {
-	ssize_t n = recv(sock, buf, size, 0);
-	printf("%d %s recv %ld\n", id, 	who, n);
+	int full = ctx->size;
+	int half = ctx->size >> 1;
+	int cnt = 0;
+
+	/* 1 */
+	do_recv(ctx, full, cnt++);
+
+	/* 3 */
+	do_recv(ctx, full, cnt);
+
+	/* 4 */
+	do_recv(ctx, half, cnt++);
+	do_recv(ctx, half, cnt++);
+
 	do_sleep(50);
 }
 
 void server()
 {
-	int sock;
-	ssize_t n;
-	char buf[SIZE1];
-	pid_t pid;
-	int cnt = 0;
+	ctx_t *ctx = make_ctx(SIZE);
+	ctx->sock = make_server_socket();
 
-	pid = getpid();
-	sock = make_server_socket();
-	memset(buf, 0, SIZE1);
-	printf("server pid=%d\n", pid);
+	/* both delay */
+	ctx->mili = unit;
+	do_server_run(ctx);
 
-	/* 1 */
-	do_recv(cnt++, SERVER, sock, buf, SIZE1);
+	/* server delay */
+	do_server_run(ctx);
 
-	/* 2 */
-	do_send(cnt++, SERVER, sock, buf, SIZE1);
+	/* client delay */
+	ctx->mili = 0;
+	do_server_run(ctx);
 
-	/* 3 */
-	do_recv(cnt, SERVER, sock, buf, SIZE2);
-	do_recv(cnt++, SERVER, sock, buf, SIZE2);
-
-	/* 4 */
-	do_recv(cnt, SERVER, sock, buf, SIZE1);
-
-	shutdown(sock, 0);
+	shutdown(ctx->sock, 0);
+	free_ctx(ctx);
 	return;
 }
 
 void client()
 {
-	int sock;
-	ssize_t n;
-	char buf[SIZE1];
-	pid_t pid;
-	int cnt = 0;
+	ctx_t *ctx = make_ctx(SIZE);
+	ctx->sock = make_client_socket();
 
-	pid = getpid();
-	sock = make_client_socket();
-	memset(buf, 0, SIZE1);
-	printf("client pid=%d\n", pid);
-	do_sleep(50);
+	/* both delay */
+	ctx->mili = unit;
+	do_client_run(ctx);
 
-	/* 1 */
-	do_send(cnt++, CLIENT, sock, buf, SIZE1);
+	/* server delay */
+	ctx->mili = 0;
+	do_client_run(ctx);
 
-	/* 2 */
-	do_recv(cnt++, CLIENT, sock, buf, SIZE1);
+	/* client delay */
+	ctx->mili = unit;
+	do_client_run(ctx);
 
-	/* 3 */
-	do_send(cnt++, CLIENT, sock, buf, SIZE1);
-
-	/* 4 */
-	do_send(cnt, CLIENT, sock, buf, SIZE2);
-	do_send(cnt, CLIENT, sock, buf, SIZE2);
-
-	shutdown(sock, 0);
+	shutdown(ctx->sock, 0);
+	free_ctx(ctx);
 	return;
 }
 
 int main(int argc, char **argv)
 {
 
-	suseconds_t s = 100000;
+	suseconds_t s = 10000;
 	unit = calibrate(s);
-
 	master();
 	return EXIT_SUCCESS;
 }
