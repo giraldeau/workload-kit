@@ -37,9 +37,10 @@ int main(int argc, char **argv)
 		char *buf = malloc(sizeof(char) * msg_len);
 		for (j = 0; j < msg_len; j++) {
 			buf[j] = c++;
-			if (c == 'z')
+			if (c > 'z')
 				c = 'a';
 		}
+		buf[msg_len-1] = '\0';
 		tracepoint(sample_component, message, buf);
 		free(buf);
 		usleep(1000000);
