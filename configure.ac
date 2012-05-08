@@ -15,7 +15,7 @@ UST_LIBS=""
 WITH_UST=""
 if test "$ENABLE_UST" = "yes"; then
 	AC_CHECK_LIB(ust, trace_mark)
-	UST_LIBS="-lust"
+	UST_LIBS="-llttng-ust -ldl"
 	AC_DEFINE(WITH_UST, 1, "Defined to 1 if UST support is enabled")
 fi
 AC_SUBST(UST_LIBS)
@@ -27,5 +27,6 @@ AM_SILENT_RULES([yes])
 
 AC_PROG_CC
 AC_CONFIG_FILES([Makefile
-    src/Makefile])
+    src/Makefile
+    ust/Makefile])
 AC_OUTPUT
