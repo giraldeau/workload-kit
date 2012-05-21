@@ -22,4 +22,4 @@
 /*
  * The header containing our TRACEPOINT_EVENTs. 
  */
-#include "sample_component_provider.h"
+#include "bossthread_tp_provider.h"

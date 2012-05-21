@@ -1,4 +1,9 @@
-bin_PROGRAMS = sample
+bin_PROGRAMS = sample bossthread
 
-sample_SOURCES = sample.c tp.c
+AM_CFLAGS = -I ../src
+
+sample_SOURCES = sample.c sample_tp.c
 sample_LDFLAGS = $(UST_LIBS)
+
+bossthread_SOURCES = bossthread.c bossthread_tp.c
+bossthread_LDFLAGS = ../src/libwk.a $(UST_LIBS)

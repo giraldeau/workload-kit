@@ -2,10 +2,6 @@ bin_PROGRAMS = ioburst deadlock dthread inception srvhog clihog lockfight cpm1 c
 ioburst_SOURCES = ioburst.c
 ioburst_LDADD = libwk.a
 
-#bossthread_SOURCES = bossthread.c
-#bossthread_LDFLAGS = $(UST_LIBS)
-#bossthread_LDADD = libwk.a
-
 deadlock_SOURCES = deadlock.c
 
 dthread_SOURCES = dthread.c

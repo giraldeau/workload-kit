@@ -21,7 +21,7 @@
  * before including provider headers.
  */
 #define TRACEPOINT_DEFINE
-#include "sample_component_provider.h"
+#include "sample_tp_provider.h"
 
 int main(int argc, char **argv)
 {
