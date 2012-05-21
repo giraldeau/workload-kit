@@ -1,0 +1,73 @@
+#!/usr/bin/python
+# given a command, trace the application with ust, kernel or both
+# kernel tracing is enabled only if the user has appropriate rights
+# the basename of the command will be used as the directory if none is provided
+
+from optparse import OptionParser
+import os
+import subprocess
+import time
+from os.path import join
+
+# the lttng command
+LTTNG="lttng"
+
+
+def cmd_stub(cmds):
+    print str(cmds)
+    subprocess.call(cmds)
+
+def do_trace(cmd, session, outdir, kernel, ust):
+    if (not (kernel or ust)):
+        return
+    if (kernel):
+        session += "-k"
+    if (ust):
+        session += "-u"
+    out = join(outdir, session)        
+    cmd_stub([LTTNG,"create", session, "-o", out])
+    if (kernel):
+        cmd_stub([LTTNG,"enable-event", "-a", "-k"])
+    if (ust):
+        cmd_stub([LTTNG,"enable-event", "-a", "-u"])
+    cmd_stub([LTTNG,"start"])
+    cmd_stub(cmd)
+    cmd_stub([LTTNG,"stop"])
+    cmd_stub([LTTNG,"destroy", session])
+
+if __name__=="__main__":
+    parser = OptionParser()
+    parser.add_option("--disable-kernel", dest="kernel", default=True, action="store_false", help="Disable kernel tracing")
+    parser.add_option("--disable-ust", dest="ust", default=True, action="store_false", help="Disable user space tracing")
+    parser.add_option("-o", "--output", dest="output", help="Output base directory for traces", metavar="DIR", default=os.getcwd())
+    parser.add_option("-b", "--batch", dest="batch", help="Run and trace all executables from this dir", metavar="DIR")
+    
+    (options, args) = parser.parse_args()
+    print options
+    print args
+    
+    targets = []
+    if (options.batch is None):
+        if (args is not None and type(args) is list and len(args) > 0):
+            target = {"name":os.path.basename(args[0]),
+                      "cmd":args}
+            targets.append(target)
+    
+    # FIXME: populate targets for batch mode
+    #import pdb
+    #pdb.set_trace()
+    if (options.batch is not None):
+        for exe in os.listdir(options.batch):
+            file = join(options.batch, exe)
+            if (os.path.isfile(file)):
+                target = {"name":exe, "cmd":[file]}
+                targets.append(target)
+            
+    for t in targets:
+        if (options.kernel):
+            do_trace(t["cmd"], t["name"], options.output, kernel=True, ust=False)
+        if (options.ust):
+            do_trace(t["cmd"], t["name"], options.output, kernel=False, ust=True)
+        if (options.ust and options.kernel):
+            do_trace(t["cmd"], t["name"], options.output, kernel=True, ust=True)
+    
