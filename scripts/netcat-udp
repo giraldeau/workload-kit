@@ -1,0 +1,11 @@
+#!/bin/sh
+
+netcat -u -l localhost 8765 > /dev/null &
+P="$P $!"
+sleep 0.1
+echo "lttng" | netcat -u localhost 8765 &
+P="$P $!"
+
+echo $P
+sleep 0.1
+kill $P

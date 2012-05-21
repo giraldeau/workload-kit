@@ -1,0 +1,6 @@
+#!/bin/sh
+
+wk-srvhog 0.0.0.0 9876 &
+sleep 2
+wk-clihog localhost 9876 sleep
+sleep 2

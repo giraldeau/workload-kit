@@ -1,0 +1,8 @@
+#!/bin/sh 
+
+for i in $(seq 0 7); do
+    burnP6 & 
+    P="$P $!"
+done
+sleep 1
+kill $P

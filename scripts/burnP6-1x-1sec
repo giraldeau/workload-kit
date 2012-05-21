@@ -1,0 +1,6 @@
+#!/bin/sh 
+
+burnP6 & 
+P=$!
+sleep 1
+kill $P

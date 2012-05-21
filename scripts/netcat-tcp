@@ -1,0 +1,7 @@
+#!/bin/sh
+
+netcat -l localhost 8765 > /dev/null &
+
+echo "lttng" | netcat localhost 8765
+
+
