@@ -2,7 +2,7 @@
 
 lttng create test
 #lttng enable-channel chan --subbuf-size 8192 -u
-lttng enable-channel chan --subbuf-size 16384 -u
+lttng enable-channel chan --subbuf-size 131072 -u
 ./sample &
 PID=$!
 sleep 0.1

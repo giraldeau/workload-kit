@@ -14,13 +14,13 @@ AC_ARG_ENABLE(ust,
 UST_LIBS=""
 WITH_UST=""
 if test "$ENABLE_UST" = "yes"; then
-	AC_CHECK_LIB(ust, trace_mark)
+	AC_CHECK_LIB(lttng-ust, ustctl_create_session)
 	UST_LIBS="-llttng-ust -ldl"
-	AC_DEFINE(WITH_UST, 1, "Defined to 1 if UST support is enabled")
+	AC_DEFINE(HAVE_UST, 1, "Defined to 1 if UST support is enabled")
 fi
 AC_SUBST(UST_LIBS)
-AC_SUBST(WITH_UST)
-AM_CONDITIONAL([WITH_UST], [ test "$ENABLE_UST" = "yes" ])
+AC_SUBST(HAVE_UST)
+AM_CONDITIONAL([HAVE_UST], [ test "$ENABLE_UST" = "yes" ])
 
 # be silent by default
 AM_SILENT_RULES([yes])
