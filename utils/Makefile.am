@@ -1,0 +1,1 @@
+bin_SCRIPTS = lttng-simple

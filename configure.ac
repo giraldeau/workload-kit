@@ -28,5 +28,6 @@ AM_SILENT_RULES([yes])
 AC_PROG_CC
 AC_CONFIG_FILES([Makefile
     src/Makefile
+    utils/Makefile
     ust/Makefile])
 AC_OUTPUT
