@@ -1,0 +1,66 @@
+.TH "LTTNG-SIMPLE" "1" "May 22, 2012" "" ""
+
+.SH "NAME"
+lttng-simple \(em Trace command with lttng
+
+.SH "SYNOPSIS"
+
+.PP
+.nf
+lttng-simple [OPTIONS] -- [COMMAND]
+.fi
+.SH "DESCRIPTION"
+
+.PP
+lttng-simple aims at running the provided command under tracing. It creates and
+setup a tracing session, run the command and then destroy the session. By
+default, three traces are generated in the current directory, one with kernel
+events, second with user-space events and the third one with both kernel and
+user-space events. Produced traces begins with the name of the executable and
+suffix \fBk\fP and \fBu\fP identify if kernel and/or user-space was enabled.
+
+.SH "OPTIONS"
+
+.TP
+.BR "\-h, \-\-help"
+Show summary of possible options and commands.
+.TP
+.BR "\-k, \-\-kernel"
+Enable kernel tracing (default: enabled)
+.TP
+.BR "\-u, \-\-userspace"
+Enable user-space tracing (default: enabled)
+.TP
+.BR "\-o, \-\-output"
+Output base directory (default: current working directory)
+.TP
+.BR "\-b, \-\-batch"
+Base directory for batch processing. When this option is provided, one trace
+will be produced for each executable in the directory.
+.TP
+.BR "\-l, \-\-log"
+Log file output (default: stdout)
+.TP
+.BR "\-n, \-\-dry-run"
+Do not execute any commands, just show what would be done.
+.TP
+.BR "\-c, \-\-clear"
+Remove trace directory if exists. If this option is not set and the trace
+directory already exists, then the trace will be appended. (default: disable)
+
+.SH "SEE ALSO"
+.PP
+lttng(1), babeltrace(1), lttng-ust(3), lttng-sessiond(8)
+
+.SH "BUGS"
+.PP
+If you encounter any issues or usability problem, please report it on our
+mailing list <lttng-dev@lists.lttng.org> to help improve this project.
+.SH "CREDITS"
+
+.PP
+.SH "AUTHORS"
+.PP
+This man page has been written by Francis Giraldeau
+<francis.giraldeau@gmail.com> for the Debian project.
+.PP

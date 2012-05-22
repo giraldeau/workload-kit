@@ -95,8 +95,8 @@ def do_trace(cmd, session, outdir, kernel, ust):
 
 if __name__=="__main__":            
     parser = OptionParser(usage=usage)
-    parser.add_option("--kernel", dest="kernel", default=False, action="store_true", help="Trace only the kernel")
-    parser.add_option("--ust", dest="ust", default=False, action="store_true", help="Trace only user space")
+    parser.add_option("-k", "--kernel", dest="kernel", default=False, action="store_true", help="Trace only the kernel")
+    parser.add_option("-u", "--ust", dest="ust", default=False, action="store_true", help="Trace only user space")
     parser.add_option("-o", "--output", dest="output", help="Output base directory for traces", metavar="DIR", default=os.getcwd())
     parser.add_option("-b", "--batch", dest="batch", help="Run and trace all executables from this dir", metavar="DIR")
     parser.add_option("-l", "--log", dest="log", metavar="FILE", help="Log file", default=None)

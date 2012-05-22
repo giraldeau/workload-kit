@@ -1,6 +1,4 @@
-if HAVE_UST
-  USTDIR = ust
-endif
+ACLOCAL_AMFLAGS = -I config
 
-SUBDIRS = src utils $(USTDIR)
+SUBDIRS = src utils ust
 

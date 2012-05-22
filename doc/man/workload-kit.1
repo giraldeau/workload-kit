@@ -1,0 +1,29 @@
+.TH "WORKLOAD-KIT" "1" "May 22, 2012" "" ""
+
+.SH "NAME"
+workload-kit \(em Toolbox to generate traces with known features
+
+.SH "DESCRIPTION"
+.PP
+Workload-kit is a set of scripts and executables to generate a trace set with
+known features. Each trace produced have some characteristics that can be used
+as input for integration tests of trace analysis algorithms. For example, a
+trace with an executable that computes in a busy loop for one second can be
+used to test the CPU usage recovery algorithm.
+
+.PP
+Workload scripts are under "/usr/share/workload-kit/scripts". These scripts can
+be traced with lttng-simple(1) in batch mode. The generated traces forms the
+trace set.
+
+.PP
+Workload scripts uses many executables that have prefix \fB\wk\-\fP. Some
+executables are instrumented with UST. They are also depends on cpuburn, netcat
+and dd.
+
+.SH "AUTHORS"
+
+.PP
+This man page has been written by Francis Giraldeau
+<francis.giraldeau@gmail.com> for the Debian project.
+.PP
