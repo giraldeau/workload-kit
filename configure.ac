@@ -1,4 +1,4 @@
-AC_INIT([workload-kit], 0.1)
+AC_INIT([workload-kit], 0.1.0)
 AC_CONFIG_AUX_DIR([config])
 AM_INIT_AUTOMAKE([foreign dist-bzip2 no-dist-gzip])
 AC_CONFIG_MACRO_DIR([config])
