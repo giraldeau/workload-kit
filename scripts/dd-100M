@@ -1,6 +1,7 @@
 #!/bin/sh
 
-F=tmp.data
+D=$(mktemp -d)
+F=$D/tmp.data
 
 for i in $(seq 1 3); do
     dd if=/dev/zero of=$F-$i bs=10M count=10 &
@@ -11,5 +12,5 @@ for pid in $P; do
     wait $pid
 done
 
-rm $F-*
+rm -rf $D
 

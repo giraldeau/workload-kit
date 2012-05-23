@@ -1,8 +1,3 @@
 #!/bin/bash
 
-BIN=$(whereis inception | awk {'print $2'})
-if [ -x "$BIN" ]; then
-    wk-inception 100 3
-else
-    echo "Error: inception executable not found in path. Please install workload-kit."
-fi
+wk-inception 100 3

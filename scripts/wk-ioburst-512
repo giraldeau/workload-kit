@@ -1,6 +1,7 @@
 #!/bin/sh
 
-F=tmp.data
+D=$(mktemp -d)
+F=$D/tmp.data
 
 wk-ioburst --count 128 --size 4096 --file $F --sync
 P="$P $!"
@@ -9,5 +10,5 @@ for pid in $P; do
     wait $pid
 done
 
-rm $F
+rm $D
 
