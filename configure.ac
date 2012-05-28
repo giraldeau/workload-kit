@@ -1,6 +1,6 @@
 AC_INIT([workload-kit], 0.1.1)
 AC_CONFIG_AUX_DIR([config])
-AM_INIT_AUTOMAKE([foreign dist-bzip2 no-dist-gzip])
+AM_INIT_AUTOMAKE([foreign dist-bzip2])
 AC_CONFIG_MACRO_DIR([config])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
