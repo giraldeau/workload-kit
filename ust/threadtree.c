@@ -27,10 +27,11 @@ typedef struct stage stage_t;
 
 typedef struct stage {
 	int nb_thread;
-	pthread_t *threads;
-	sem_t sem_join;
-	sem_t mutex;
 	int exit_count;
+	pthread_t *threads;
+	pthread_t *ready;
+	sem_t sem_ready;
+	sem_t mutex;
 	stage_t *next;
 } stage_t;
 
@@ -109,18 +110,24 @@ void do_something() {
 
 void *thread_worker(void *arg) {
 	int i;
+	int index;
 	stage_t *stage = ((stage_t *)arg);
 
 	printf("start thread_worker %lu\n", pthread_self());
 	do_something();
 
 	sem_wait(&stage->mutex);
-	stage->exit_count--;
-	if (stage->exit_count == 0) {
-		sem_post(&stage->sem_join);
+	index = stage->exit_count++;
+	sem_post(&stage->mutex);
+
+	/* add ourself to the ready array */
+	stage->ready[index] = pthread_self();
+	sem_post(&stage->sem_ready);
+
+	/* The last thread in the stage spawns the next stage */
+	if (index == stage->nb_thread - 1) {
 		spawn_stage(stage->next);
 	}
-	sem_post(&stage->mutex);
 	return NULL;
 }
 
@@ -133,10 +140,11 @@ task_t *make_task(int nb_stages, int nb_threads) {
 	for (i = 0; i < nb_stages; i++) {
 		stage_t *stage = calloc(1, sizeof(stage_t));
 		stage->nb_thread = nb_threads;
-		stage->exit_count = nb_threads;
-		sem_init(&stage->sem_join, 0, 0);
+		stage->exit_count = 0;
+		sem_init(&stage->sem_ready, 0, 0);
 		sem_init(&stage->mutex, 0, 1);
 		stage->threads = calloc(nb_threads, sizeof(pthread_t));
+		stage->ready = calloc(nb_threads, sizeof(pthread_t));
 		*curr = stage;
 		curr = &stage->next;
 	}
@@ -152,6 +160,8 @@ void free_task(task_t *task) {
 	for (curr = task->stages; curr != NULL;) {
 		if (curr->threads != NULL)
 			free(curr->threads);
+		if (curr->ready != NULL)
+			free(curr->ready);
 		next = curr->next;
 		free(curr);
 		curr = next;
@@ -175,13 +185,15 @@ void dump_task(task_t *task) {
 
 void wait_task(task_t *task) {
 	stage_t *stage;
-	int i, nb = 0;
+	int i = 0, nb = 0;
 	for (stage = task->stages; stage != NULL; stage = stage->next) {
 		printf("main: wait stage %d\n", nb++);
-		sem_wait(&stage->sem_join);
 		for (i = 0; i < stage->nb_thread; i++) {
-			pthread_join(stage->threads[i], NULL);
+			sem_wait(&stage->sem_ready);
+			printf("join on %lu\n", stage->ready[i]);
+			pthread_join(stage->ready[i], NULL);
 		}
+
 	}
 }
 
