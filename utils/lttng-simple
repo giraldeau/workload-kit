@@ -44,9 +44,10 @@ def do_trace(cmd, session, outdir, kernel, ust):
     if (ust):
         session += "-u"
     out = join(outdir, session)
-    session = session + "-" + str(uuid.uuid1())
+    # generate random uuid
+    session = session + "-" + str(uuid.uuid4())
 
-    logging.info("start tracing: " + session)    
+    logging.info("start tracing: " + session)  
     # Checks and cleanup
     if (os.path.isdir(out)):
         if (clear_trace == True):
