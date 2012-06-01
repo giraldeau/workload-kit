@@ -13,6 +13,7 @@ import logging
 import string
 from subprocess import CalledProcessError
 import shutil
+import uuid
 
 # the lttng command
 LTTNG="lttng"
@@ -43,6 +44,7 @@ def do_trace(cmd, session, outdir, kernel, ust):
     if (ust):
         session += "-u"
     out = join(outdir, session)
+    session = session + "-" + str(uuid.uuid1())
 
     logging.info("start tracing: " + session)    
     # Checks and cleanup
