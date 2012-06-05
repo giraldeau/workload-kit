@@ -79,8 +79,8 @@ def do_trace(cmd, session, outdir, kernel, ust):
             raise Exception("Enable userspace channel failed")
         if (cmd_stub([LTTNG, "enable-event", "-c", "u", "-a", "-u"]) != 0):
             raise Exception("Enable userspace events failed")
-        if (cmd_stub([LTTNG, "add-context", "-c", "u", "-u", "-t", "vpid"]) != 0):
-            raise Exception("Add pid and pthread_id events failed")
+        if (cmd_stub([LTTNG, "add-context", "-c", "u", "-u", "-t", "vpid", "-t", "vtid"]) != 0):
+            raise Exception("Add vpid and vtid events failed")
     
     # Step 3: start tracing
     ret = cmd_stub([LTTNG, "start"])

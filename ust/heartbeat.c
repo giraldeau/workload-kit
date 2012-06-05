@@ -24,11 +24,13 @@
 #define DEFAULT_MSG 	"heartbeat"
 #define DEFAULT_DELAY	1000000
 #define DEFAULT_REP	10
+#define DEFAULT_NB_THD  1
 
 struct command_opts {
 	char *message;
 	int delay;
 	int rep;
+	int nb_thread;
 	int verbose;
 	int quiet;
 };
@@ -41,7 +43,7 @@ static void usage(void)
 	fprintf(stderr, "\nOptions:\n");
 	fprintf(stderr, "  --help	this help\n");
 	fprintf(stderr, "  --message	custom message to write as heartbeat, default heartbeat\n");
-	//fprintf(stderr, "  --thread	set number of threads\n");
+	fprintf(stderr, "  --thread	set number of threads\n");
 	fprintf(stderr, "  --delay 	delay between heartbeats (us), default 1s\n");
 	fprintf(stderr, "  --rep	number of heartbeats to emit, default 10\n");
 	fprintf(stderr, "  --verbose	verbose mode, display option values\n");
@@ -56,6 +58,7 @@ static void dump_opts(struct command_opts *opts)
 	printf("%10s %s\n", "message", opts->message);
 	printf("%10s %d\n", "delay", opts->delay);
 	printf("%10s %d\n", "rep", opts->rep);
+	printf("%10s %d\n", "nb_thread", opts->nb_thread);
 	printf("%10s %d\n", "verbose", opts->verbose);
 	printf("%10s %d\n", "quiet", opts->quiet);
 }
@@ -73,10 +76,11 @@ static int parse_opts(int argc, char **argv, struct command_opts *opts)
 	int ret = 0;
 
 	struct option options[] = {
-			{ "help",	 0, 0, 'h' },
-			{ "message",	 1, 0, 'm' },
-			{ "delay",	 1, 0, 'd' },
-			{ "rep",	 1, 0, 'r' },
+			{ "help",        0, 0, 'h' },
+			{ "message",     1, 0, 'm' },
+			{ "delay",       1, 0, 'd' },
+			{ "rep",         1, 0, 'r' },
+			{ "nb_thread",   1, 0, 'n' },
 			{ "verbose",     0, 0, 'v' },
 			{ "quiet",       0, 0, 'q' },
 			{ 0, 0, 0, 0}
@@ -84,7 +88,7 @@ static int parse_opts(int argc, char **argv, struct command_opts *opts)
 
 	memset(opts, 0, sizeof(struct command_opts));
 
-	while ((opt = getopt_long(argc, argv, "hvm:d:r:", options, &idx)) != -1) {
+	while ((opt = getopt_long(argc, argv, "hvm:d:r:n:q:", options, &idx)) != -1) {
 		switch(opt) {
 		case 'm':
 			opts->message = strdup(optarg);
@@ -94,6 +98,9 @@ static int parse_opts(int argc, char **argv, struct command_opts *opts)
 			break;
 		case 'r':
 			opts->rep = atoi(optarg);
+			break;
+		case 'n':
+			opts->nb_thread = atoi(optarg);
 			break;
 		case 'h':
 			usage();
@@ -118,6 +125,8 @@ static int parse_opts(int argc, char **argv, struct command_opts *opts)
 		opts->delay = DEFAULT_DELAY;
 	if (opts->rep == 0)
 		opts->rep = DEFAULT_REP;
+	if (opts->nb_thread == 0)
+		opts->nb_thread = DEFAULT_NB_THD;
 	if (opts->verbose) {
 		dump_opts(opts);
 	}
@@ -128,22 +137,45 @@ err:
 	goto done;
 }
 
+void *heartbeat_thread(void *arg) {
+	int i;
+	pthread_t id;
+	struct command_opts *opts = arg;
+
+	if (opts == NULL)
+		return NULL;
+
+	id = pthread_self();
+	usleep(opts->delay);
+	for (i = 0; i < opts->rep; i++) {
+		if (!opts->quiet)
+			printf("0x%-16lx %-10d %s\n", id, i, opts->message);
+		tracepoint(heartbeat, msg, opts->message);
+		usleep(opts->delay);
+	}
+	return NULL;
+}
+
 int main(int argc, char **argv)
 {
 	struct command_opts opts;
 	int ret = 0;
 	int i = 0;
+	pthread_t *thds;
 
 	ret = parse_opts(argc, argv, &opts);
 	if (ret < 0)
 		goto error;
 
-	usleep(opts.delay);
-	for (i = 0; i < opts.rep; i++) {
-		if (!opts.quiet)
-			printf("%s %i\n", opts.message, i);
-		tracepoint(heartbeat, msg, opts.message);
-		usleep(opts.delay);
+	thds = calloc(sizeof(thds), opts.nb_thread);
+
+	if (!opts.quiet)
+		printf("%-18s %-10s %s\n", "id", "rep", "message");
+	for (i = 0; i < opts.nb_thread; i++) {
+		pthread_create(&thds[i], NULL, heartbeat_thread, &opts);
+	}
+	for (i = 0; i < opts.nb_thread; i++) {
+		pthread_join(thds[i], NULL);
 	}
 
 error:
