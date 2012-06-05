@@ -45,9 +45,9 @@ def do_trace(cmd, session, outdir, kernel, ust):
         session += "-u"
     out = join(outdir, session)
     # generate random uuid
-    session = session + "-" + str(uuid.uuid4())
+    usession = session + "-" + str(uuid.uuid4())
 
-    logging.info("start tracing: " + session)  
+    logging.info("start tracing: " + usession)  
     # Checks and cleanup
     if (os.path.isdir(out)):
         if (clear_trace == True):
@@ -60,13 +60,13 @@ def do_trace(cmd, session, outdir, kernel, ust):
             logging.warning("Append to existing trace: " + out)
         
     # Step 1: start session
-    ret = cmd_stub([LTTNG, "create", session, "-o", out])
+    ret = cmd_stub([LTTNG, "create", usession, "-o", out])
     # if the session is stalled, then destroy it and try again
     if (ret == 28):
-        cmd_stub([LTTNG, "destroy", session])
-        ret = cmd_stub([LTTNG,"create", session, "-o", out])
+        cmd_stub([LTTNG, "destroy", usession])
+        ret = cmd_stub([LTTNG,"create", usession, "-o", out])
         if (ret != 0):
-            raise Exception("Can't create session " + session)
+            raise Exception("Can't create session " + usession)
     
     # Step 2: enable required events
     if (kernel):
@@ -79,6 +79,8 @@ def do_trace(cmd, session, outdir, kernel, ust):
             raise Exception("Enable userspace channel failed")
         if (cmd_stub([LTTNG, "enable-event", "-c", "u", "-a", "-u"]) != 0):
             raise Exception("Enable userspace events failed")
+        if (cmd_stub([LTTNG, "add-context", "-c", "u", "-u", "-t", "vpid"]) != 0):
+            raise Exception("Add pid and pthread_id events failed")
     
     # Step 3: start tracing
     ret = cmd_stub([LTTNG, "start"])
@@ -91,11 +93,11 @@ def do_trace(cmd, session, outdir, kernel, ust):
     
     # Step 5: tear down
     cmd_stub([LTTNG,"stop"])
-    ret = cmd_stub([LTTNG,"destroy", session])
+    ret = cmd_stub([LTTNG,"destroy", usession])
     if (ret != 0):
-        raise Exception("Destroy session " + session + " failed")
-    logging.info("done tracing: " + session)
-
+        raise Exception("Destroy session " + usession + " failed")
+    logging.info("done tracing: " + usession)
+    
 if __name__=="__main__":            
     parser = OptionParser(usage=usage)
     parser.add_option("-k", "--kernel", dest="kernel", default=False, action="store_true", help="Trace only the kernel")
