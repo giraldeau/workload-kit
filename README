@@ -1,12 +1,88 @@
-Workload-kit
-============
+Workload-kit - Trace set generator
+==================================
 
-Various utilities for generating workloads.
+Introduction
+------------
 
-program    | description
--------------------------------------------------------------------------------
-ioburst    | create writes into a file
-proclife   | trigger every possible process states
-dthread    | creates a thread that create an other thread (link with -lpthread)
-deadlock   | creates a deadlock between two threads
-inception  | spawn sleeping children recursively
+Workload-kit is a set of utilities to generate various kind of workloads on a
+system, aimed at generating traces that presents recognizable features. The
+generated trace set could be used as a basis to validate trace analysis
+algorithms. Workload-kit makes it easy to generate the trace set on any
+architecture in a reproducible way.
+
+Requirements
+------------
+
+Workload-kit uses Autotools as build system. Recent GNU compiler and
+C standard library is required.
+
+Build libraries required:
+
+  * liblttng-ust > 2.0
+
+Generating traces requires:
+
+  * lttng-tools >= 2.0
+  * lttng-modules >= 2.0
+  * python >= 2.7
+  * cpuburn
+  * openbsd-netcat
+  * coreutils
+
+Overview
+--------
+
+The package has 4 main components:
+  
+  * Plain C executables in src/
+  * C executables instrumented with LTTng-UST in ust/
+  * Standard workload scripts in scripts/
+  * lttng-simple in utils/
+
+C language is used to get better precision about the underlying system calls
+that are made by programs. These programs usually accept parameters to 
+fine-tune the desired load. All executables are prefixed with "wk-".
+
+Load scripts encapsulate a series of steps to perform an experiment with 
+fixed parameter values. Scripts may use provided wk executables, but can
+also use other tools, provided they are open source and listed in the
+dependencies. 
+
+lttng-simple is a small utility to generate one trace per script in batch 
+mode, for either kernel or user-space tracing. The resulting traces forms
+the trace set. 
+
+Generating the trace set
+------------------------
+Running this command, with a user in the tracing group, or as root, and with
+the default paths:
+
+ export TRACE_SET_DIR=/tmp/trace-set/
+ mkdir $TRACE_SET_DIR
+ lttng-simple -o /tmp/trace-set/ -b /usr/local/share/workload-kit/scripts/
+
+For best results, generate traces on an idle machine without graphical 
+interface, and if doing so with SSH, then the log file option can be used to
+prevent generating network I/O.
+
+Contributing
+------------
+
+Needs some specific trace for your trace analysis algorithmic unit testing?
+Contributions are welcome! For backward compatibility, existing trace scripts
+will be kept between major releases of workload-kit, and mark them as 
+deprecated to allow other developers to cope with change. New trace scripts or
+executables can be added anytime.
+
+Few requirements:
+ * Scripts must be non-interactive
+ * Scripts must work by default without any manual configuration
+ * If special dependencies are required, they must be documented
+ * If a script creates temp files, they must be cleaned
+
+Code style:
+ * Python code is indented with 4 spaces
+ * C code style follow (approximately) linux kernel coding style
+   (yes, there is cleanup to do)
+
+Happy hacking!

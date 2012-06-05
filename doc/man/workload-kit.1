@@ -12,14 +12,13 @@ trace with an executable that computes in a busy loop for one second can be
 used to test the CPU usage recovery algorithm.
 
 .PP
-Workload scripts are under "/usr/share/workload-kit/scripts". These scripts can
+Workload scripts are under "$(pkgdatadir)/workload-kit/scripts". These scripts can
 be traced with lttng-simple(1) in batch mode. The generated traces forms the
 trace set.
 
 .PP
-Workload scripts uses many executables that have prefix \fB\wk\-\fP. Some
-executables are instrumented with UST. They are also depends on cpuburn, netcat
-and dd.
+For more information about generating the trace set, please refer to the README
+file.
 
 .SH "AUTHORS"
 
