@@ -1,10 +1,10 @@
-bin_PROGRAMS = wk-sample wk-bossthread wk-functrace wk-threadtree
+bin_PROGRAMS = wk-heartbeat wk-bossthread wk-functrace wk-threadtree
 
 AM_CFLAGS = -I $(top_srcdir)/src
 
-wk_sample_SOURCES = sample.c sample_tp.c sample_tp_provider.h
-wk_sample_LDADD = $(UST_LIBS)
-wk_sample_CFLAGS = $(UST_CFLAGS)
+wk_heartbeat_SOURCES = heartbeat.c heartbeat_tp.c heartbeat_tp_provider.h
+wk_heartbeat_LDADD = $(UST_LIBS)
+wk_heartbeat_CFLAGS = $(UST_CFLAGS)
 
 wk_bossthread_SOURCES = bossthread.c bossthread_tp.c bossthread_tp_provider.h
 wk_bossthread_LDADD = ../src/libwk.a $(UST_LIBS)
