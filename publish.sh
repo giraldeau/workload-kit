@@ -1,19 +1,24 @@
-#!/bin/sh -x
+#!/bin/bash -x
 
 # Release script: makes new tarballs of the current directory and push them to
 # server. Updates md5sums accordingly.
 
 # vars
-PKG_NAME="workload-kit"
-USER=fgiraldeau
-SERVER=secretaire.dorsal.polymtl.ca
-CONNEX=${USER}@${SERVER}
-PKG_PATH=public_html/${PKG_NAME}/
+source vars.sh
 
 # do it
+#git clean -f -d
+./bootstrap
+./configure
 make dist
-rsync -av ${PKG_NAME}-*.tar.bz2 ${PKG_NAME}-*.tar.gz  ${CONNEX}:${PKG_PATH}
+
+if [ ! -f ${TGZ} ]; then
+	echo "ERROR: ${TGZ} not found"
+	exit 1
+fi
+rsync -av ${TGZ} ${BZ2}  ${CONNEX}:${PKG_PATH}
 ssh ${CONNEX} ./update_md5sums.sh ${PKG_PATH}
+
 
 echo "Done."
 

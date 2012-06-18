@@ -15,6 +15,9 @@
 #include <pthread.h>
 #include <omp.h>
 
+#define TRACEPOINT_DEFINE
+#include "threadtree_tp_provider.h"
+
 #define PROGNAME "wk-threadtree"
 #define NB_THREAD 3
 #define NB_STAGE 3
@@ -30,6 +33,7 @@ typedef struct stage {
 	int exit_count;
 	pthread_t *threads;
 	pthread_t *ready;
+	pthread_t parent;
 	sem_t sem_ready;
 	sem_t mutex;
 	stage_t *next;
@@ -100,6 +104,7 @@ void spawn_stage(stage_t *stage) {
 		pthread_t *thd = stage->threads + i;
 		printf("pthread_create\n");
 		pthread_create(thd, NULL, thread_worker, stage);
+		tracepoint(threadtree, fork, pthread_self(), *thd);
 	}
 }
 
@@ -114,6 +119,7 @@ void *thread_worker(void *arg) {
 	stage_t *stage = ((stage_t *)arg);
 
 	printf("start thread_worker %lu\n", pthread_self());
+	tracepoint(threadtree, start, pthread_self());
 	do_something();
 
 	sem_wait(&stage->mutex);
@@ -126,8 +132,10 @@ void *thread_worker(void *arg) {
 
 	/* The last thread in the stage spawns the next stage */
 	if (index == stage->nb_thread - 1) {
+		stage->parent = pthread_self();
 		spawn_stage(stage->next);
 	}
+	tracepoint(threadtree, exit, pthread_self());
 	return NULL;
 }
 

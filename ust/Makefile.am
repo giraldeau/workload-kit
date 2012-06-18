@@ -20,6 +20,6 @@ wk_functrace_CFLAGS = -finstrument-functions
 wk_functrace_LDFLAGS = -rdynamic
 wk_functrace_LDADD = libcyg.la $(UST_LIBS)
 
-wk_threadtree_SOURCES = threadtree.c
+wk_threadtree_SOURCES = threadtree.c threadtree_tp.c threadtree_tp_provider.h
 wk_threadtree_LDADD = $(UST_LIBS)
 wk_threadtree_CFLAGS = $(UST_CFLAGS) $(OPENMP_CFLAGS)
