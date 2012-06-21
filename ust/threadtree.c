@@ -143,11 +143,12 @@ task_t *make_task(int nb_stages, int nb_threads) {
 	int i, j;
 	stage_t **curr;
 	task_t *task = calloc(1, sizeof(task_t));
+	int curr_nb_threads = nb_threads;
 	task->nb_stages = nb_stages;
 	curr = &task->stages;
 	for (i = 0; i < nb_stages; i++) {
 		stage_t *stage = calloc(1, sizeof(stage_t));
-		stage->nb_thread = nb_threads;
+		stage->nb_thread = curr_nb_threads--;
 		stage->exit_count = 0;
 		sem_init(&stage->sem_ready, 0, 0);
 		sem_init(&stage->mutex, 0, 1);
@@ -215,9 +216,11 @@ int main(int argc, char **argv) {
 		usage();
 	}
 	dump_opts(&opts);
-	task_t *task = make_task(2, 2);
+	task_t *task = make_task(4, 4);
 	dump_task(task);
+	tracepoint(threadtree, start, pthread_self());
 	spawn_stage(task->stages);
+	tracepoint(threadtree, exit, pthread_self());
 	wait_task(task);
 	free_task(task);
 done:
