@@ -33,6 +33,7 @@ AC_CONFIG_FILES([Makefile
     ust/bossthread/Makefile
     ust/functrace/Makefile
     ust/heartbeat/Makefile
+    ust/hello-openmp/Makefile
     ust/threadtree/Makefile
     doc/man/Makefile
 ])

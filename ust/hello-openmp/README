@@ -1,0 +1,11 @@
+This is a multi-threaded version of the "hello" test program. It uses OpenMP for
+parallelization, and as such requires at least GCC 4.2.
+
+You can pass one integer as argument when running the program, this will
+indicate how many threads to use. For example
+
+./hello 10
+
+will run the test with 10 threads. If no argument is passed, the default of
+1 thread is used, in which case the behaviour should be similar to the original
+"hello" program.
