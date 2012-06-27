@@ -30,6 +30,10 @@ AC_CONFIG_FILES([Makefile
     src/Makefile
     doc/Makefile
     ust/Makefile
+    ust/bossthread/Makefile
+    ust/functrace/Makefile
+    ust/heartbeat/Makefile
+    ust/threadtree/Makefile
     doc/man/Makefile
 ])
 AC_OUTPUT
