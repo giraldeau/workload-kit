@@ -4,7 +4,7 @@ script_dir := scripts
 files := $(foreach script,$(script_dir),$(wildcard $(script)/*))
 script_dest := $(DESTDIR)$(pkgdatadir)/$(script_dir)
 
-SUBDIRS = src utils ust
+SUBDIRS = src utils ust tests
 EXTRA_DIST = $(script_dir) doc utils
 
 install-data-local:

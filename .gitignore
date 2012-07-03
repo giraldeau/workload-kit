@@ -27,7 +27,4 @@ ChangeLog
 TAGS
 libtool
 ylwrap
-src/bossthread
-src/deadlock
-src/iosplit
-src/proclife
+vars.sh

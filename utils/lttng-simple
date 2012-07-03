@@ -70,9 +70,9 @@ def do_trace(cmd, session, outdir, kernel, ust):
     
     # Step 2: enable required events
     if (kernel):
-        if (cmd_stub([LTTNG, "enable-channel", "k", "-k"]) != 0):
+        if (cmd_stub([LTTNG, "enable-channel", "k", "-k", "--num-subbuf", "32"]) != 0):
             raise Exception("Enable kernel channel failed")
-        if (cmd_stub([LTTNG, "enable-event", "-c", "k", "-a", "-k"]) != 0):
+        if (cmd_stub([LTTNG, "enable-event", "-c", "k", "lttng_uevent", "-k"]) != 0):
             raise Exception("Enable kernel events failed")
     if (ust):
         if (cmd_stub([LTTNG, "enable-channel", "u", "-u"]) != 0):
