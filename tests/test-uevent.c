@@ -22,18 +22,20 @@
 #define MAX 1024
 
 void *worker(void *arg) {
-	uint64_t i;
+	uint64_t i, ret, miss = 0;
 	long self = (long) arg;
 	FILE *f = NULL;
 	while(f == NULL) {
 		f = fopen(LTTNG_FILE, "w");
 	}
 	for (i = 0; i < NB_EV; i++) {
-		fprintf(f, "%s " PRId64 " %" PRId64, MSG, self, i);
+		ret = fprintf(f, "%s " PRId64 " %" PRId64, MSG, self, i);
+		if (ret < 0)
+			miss++;
 		fflush(f);
 	}
 	fclose(f);
-	printf("Done %" PRId64 "\n", self);
+	printf("Done %" PRId64 " misses=%" PRId64 "\n", self, miss);
 	return NULL;
 }
 
