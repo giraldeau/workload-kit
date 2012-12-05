@@ -42,7 +42,7 @@ int main(int argc, char **argv) {
 	pthread_mutex_init(&mutex_a, NULL);
 	pthread_mutex_init(&mutex_b, NULL);
 	pthread_create(&threads[0], NULL, worker_a, NULL);
-	pthread_create(&threads[2], NULL, worker_b, NULL);
+	pthread_create(&threads[1], NULL, worker_b, NULL);
 	usleep(DELAY * 10);
 
 	pthread_kill(threads[0], SIGKILL);

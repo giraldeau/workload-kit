@@ -1,4 +1,6 @@
-bin_PROGRAMS = wk-ioburst wk-deadlock wk-dthread wk-inception wk-srvhog wk-clihog wk-lockfight wk-cpm1 wk-cpm2 wk-cpm3
+bin_PROGRAMS = wk-ioburst wk-deadlock wk-dthread wk-inception wk-srvhog \
+               wk-clihog wk-lockfight wk-cpm1 wk-cpm2 wk-cpm3 wk-pipeline \
+               wk-mutex wk-imbalance
 
 wk_ioburst_SOURCES = ioburst.c
 wk_ioburst_LDADD = libwk.a
@@ -27,6 +29,13 @@ wk_cpm2_LDADD = libwk.a
 
 wk_cpm3_SOURCES = cpm3.c
 wk_cpm3_LDADD = libwk.a
+
+wk_pipeline_SOURCES = pipeline.c
+
+wk_futex_SOURCES = mutex.c
+
+wk_imbalance_SOURCES = imbalance.c
+wk_imbalance_LDADD = libwk.a
 
 noinst_LIBRARIES = libwk.a
 libwk_a_SOURCES = calibrate.h calibrate.c utils.c utils.h
