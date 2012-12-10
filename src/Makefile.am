@@ -32,7 +32,7 @@ wk_cpm3_LDADD = libwk.a
 
 wk_pipeline_SOURCES = pipeline.c
 
-wk_futex_SOURCES = mutex.c
+wk_mutex_SOURCES = mutex.c
 
 wk_imbalance_SOURCES = imbalance.c
 wk_imbalance_LDADD = libwk.a
