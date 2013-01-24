@@ -1,0 +1,23 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.8	//
+BUF_SIZE	cputemp.c	58;"	d	file:
+PROGRAM	cputemp.c	34;"	d	file:
+TRACEPOINT_DEFINE	cputemp.c	31;"	d	file:
+VERSION	cputemp.c	35;"	d	file:
+do_a_print	cputemp.c	/^static void do_a_print(const sensors_chip_name *name)$/;"	f	file:
+do_the_real_work	cputemp.c	/^static int do_the_real_work(const sensors_chip_name *match, int *err)$/;"	f	file:
+get_input_value	cputemp.c	/^static int get_input_value(const sensors_chip_name *name,$/;"	f	file:
+get_label_size	cputemp.c	/^static int get_label_size(const sensors_chip_name *name)$/;"	f	file:
+get_value	cputemp.c	/^static double get_value(const sensors_chip_name *name,$/;"	f	file:
+main	cputemp.c	/^int main(int argc, char *argv[]){$/;"	f
+print_chip	cputemp.c	/^void print_chip(const sensors_chip_name *name)$/;"	f
+print_chip_temp	cputemp.c	/^static void print_chip_temp(const sensors_chip_name *name,$/;"	f	file:
+print_label	cputemp.c	/^static void print_label(const char *label, int space)$/;"	f	file:
+print_long_help	cputemp.c	/^static void print_long_help(void)$/;"	f	file:
+print_short_help	cputemp.c	/^static void print_short_help(void)$/;"	f	file:
+print_version	cputemp.c	/^static void print_version(){$/;"	f	file:
+sprintf_chip_name	cputemp.c	/^static const char *sprintf_chip_name(const sensors_chip_name *name)$/;"	f	file:

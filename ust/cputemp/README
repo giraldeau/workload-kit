@@ -1,0 +1,14 @@
+Requires the following packages 
+
+For Fedora : 
+  1. lm_sensors-devel
+  2. lm_sensors-lib
+  3. lm_sensors
+
+For Ubuntu : 
+  1. lm-sensors
+  2. lm-sensors-dev
+  
+  Before running application do the following first : 
+  
+  $sensors-detect 
