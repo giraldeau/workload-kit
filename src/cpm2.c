@@ -13,6 +13,7 @@
  *  child 1     +======+
  *
  *  The master creates a child, but perform the wait only after the child exits.
+ *  The child remains in the zombie state in the millisecond range.
  *  The resulting critical path is always in master, the master never wait nor
  *  receives wakeup.
  */
