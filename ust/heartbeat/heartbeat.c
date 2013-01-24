@@ -43,7 +43,7 @@ static void usage(void)
 	fprintf(stderr, "\nOptions:\n");
 	fprintf(stderr, "  --help	this help\n");
 	fprintf(stderr, "  --message	custom message to write as heartbeat, default heartbeat\n");
-	fprintf(stderr, "  --thread	set number of threads\n");
+	fprintf(stderr, "  --nb_thread	set number of threads\n");
 	fprintf(stderr, "  --delay 	delay between heartbeats (us), default 1s\n");
 	fprintf(stderr, "  --rep	number of heartbeats to emit, default 10\n");
 	fprintf(stderr, "  --verbose	verbose mode, display option values\n");
