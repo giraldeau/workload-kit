@@ -12,3 +12,8 @@ For Ubuntu :
   Before running application do the following first : 
   
   $sensors-detect 
+
+NOTES
+  * Compile without Workload Kit :
+    gcc -g cputemp_tp.c cputemp.c -I./ -lsensors -o wk-temp -llttng-ust -ldl
+

@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2013  Suchakra Sharma <suchakrapani.sharma@polymtl.ca>
- * 
+ *
  * This is a nice small tool to see the CPU temperature as your systems
  * starts a burn. Its useful if you have workload-kit.
  *

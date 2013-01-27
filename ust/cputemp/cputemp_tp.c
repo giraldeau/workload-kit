@@ -22,4 +22,4 @@
 /*
  * The header containing our TRACEPOINT_EVENTs. 
  */
-#include "heartbeat_tp_provider.h"
+#include "cputemp_tp_provider.h"

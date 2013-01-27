@@ -20,6 +20,6 @@ static int get_input_value(const sensors_chip_name *name, const sensors_subfeatu
 static void print_chip_temp(const sensors_chip_name *name,const sensors_feature *feature, int label_size);
 static int get_label_size(const sensors_chip_name *name);
 void print_chip(const sensors_chip_name *name);
-static double get_value(const sensors_chip_name *name, const sensors_subfeature *sub);i
+static double get_value(const sensors_chip_name *name, const sensors_subfeature *sub);
 
 #endif /* _CPUTEMP_H */
