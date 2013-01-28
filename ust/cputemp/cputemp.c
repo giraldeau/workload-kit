@@ -32,7 +32,7 @@
 #include "cputemp_tp_provider.h"
 
 #define PROGRAM "wk-cputemp"
-#define VERSION "0.0.1"
+#define PROG_VERSION "0.0.1"
 
 static void print_short_help(void)
 {
@@ -40,7 +40,7 @@ static void print_short_help(void)
 }
 
 static void print_version(){
-  printf("%s version is %s\n", PROGRAM, VERSION);
+  printf("%s version is %s\n", PROGRAM, PROG_VERSION);
 
 }
 
@@ -65,7 +65,7 @@ static const char *sprintf_chip_name(const sensors_chip_name *name)
 
 static void do_a_print(const sensors_chip_name *name)
 {
-	printf("The Chip I've found is : %s\n", sprintf_chip_name(name));
+	printf("The chip I've found is : %s\n", sprintf_chip_name(name));
 	print_chip(name);
 	printf("\n");
 }
@@ -93,15 +93,12 @@ static int do_the_real_work(const sensors_chip_name *match, int *err)
 	return cnt;
 }
 
-
-
 static void print_label(const char *label, int space)
 {
 	int len = strlen(label)+1;
 	printf("%s:%*s", label, space - len, "");
 }
 
-/* A variant for input values, where we want to handle errors gracefully */
 static int get_input_value(const sensors_chip_name *name,
              const sensors_subfeature *sub,
                      double *val)
@@ -135,11 +132,11 @@ static void print_chip_temp(const sensors_chip_name *name,
 	print_label(label, label_size);
 	free(label);
 
-//	sf = sensors_get_subfeature(name, feature,
-//				    SENSORS_SUBFEATURE_TEMP_FAULT);
-//	if (sf && get_value(name, sf)) {
-//		printf("   FAULT  ");
-//	} else {
+	sf = sensors_get_subfeature(name, feature,
+				    SENSORS_SUBFEATURE_TEMP_FAULT);
+	if (sf && get_value(name, sf)) {
+		printf("   FAULT  ");
+	} else {
 		sf = sensors_get_subfeature(name, feature,
 					    SENSORS_SUBFEATURE_TEMP_INPUT);
 		if (sf && get_input_value(name, sf, &val) == 0) {
@@ -147,7 +144,7 @@ static void print_chip_temp(const sensors_chip_name *name,
 			printf("%+6.1f%s  ", val, " deg C");
 		} else
 			printf("     N/A  ");
-//	}
+	}
 }
 
 static int get_label_size(const sensors_chip_name *name)
@@ -176,11 +173,10 @@ void print_chip(const sensors_chip_name *name)
 	int i, label_size;
 
 	label_size = get_label_size(name);
-	feature = sensors_get_features(name, &i);
-	print_chip_temp(name, feature, label_size);
+  feature = sensors_get_features(name, &i);
+  print_chip_temp(name, feature, label_size);
 
 }
-
 
 static double get_value(const sensors_chip_name *name,
 			const sensors_subfeature *sub)
@@ -197,17 +193,15 @@ static double get_value(const sensors_chip_name *name,
 	return val;
 }
 
-
-
 int main(int argc, char *argv[]){
 
 	int c, i, err, repeat_seconds_val;
 		
-    const char *repeat_seconds;
+//    const char *repeat_seconds;
   	struct option long_opts[] =  {
 			{ "help", no_argument, NULL, 'h' },
 			{ "version", no_argument, NULL, 'v'},
-			{ "repeat-seconds", required_argument, 's'},
+			{ "repeat-seconds", required_argument, NULL, 's'},
 			{ 0, 0, 0, 0 }
 		};
 
@@ -227,7 +221,7 @@ int main(int argc, char *argv[]){
 				print_version();
 				exit(0);
 			case 's':
-				repeat_seconds = optarg;
+//				repeat_seconds = optarg;
         repeat_seconds_val = atoi(optarg);
 				break;
 
@@ -267,5 +261,3 @@ exit:
 		sensors_cleanup();
 		exit(err);
 }
-
-

@@ -35,6 +35,7 @@ AC_CONFIG_FILES([Makefile
     ust/heartbeat/Makefile
     ust/hello-openmp/Makefile
     ust/threadtree/Makefile
+    ust/cputemp/Makefile
     tests/Makefile
     doc/man/Makefile
 ])

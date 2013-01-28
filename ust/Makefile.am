@@ -1,2 +1,2 @@
-SUBDIRS = bossthread functrace heartbeat hello-openmp threadtree
+SUBDIRS = bossthread functrace heartbeat hello-openmp threadtree cputemp
 
