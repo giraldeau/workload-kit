@@ -65,7 +65,7 @@ static const char *sprintf_chip_name(const sensors_chip_name *name)
 
 static void do_a_print(const sensors_chip_name *name)
 {
-	printf("The chip I've found is : %s\n", sprintf_chip_name(name));
+	printf("Chip : %s\n", sprintf_chip_name(name));
 	print_chip(name);
 	printf("\n");
 }
@@ -77,19 +77,17 @@ static int do_the_real_work(const sensors_chip_name *match, int *err)
 	const sensors_chip_name *chip;
 	int chip_nr;
 	int cnt = 0;
-
 	chip_nr = 0;
-	while ((chip = sensors_get_detected_chips(match, &chip_nr))) {
-			printf("Chip is %s\n", chip->prefix);
-      if (strstr(chip->prefix, "core" ) != NULL){			//Bad Idea : seeing if the chip found is CPU core chip?
-				do_a_print(chip);
-			}else
-			{
-				printf("The chip I have found is not a CPU core. Trying next maybe..\n");
-			}
-
-		cnt++;
-	}
+  while ((chip = sensors_get_detected_chips(match, &chip_nr))) {
+      //printf("Chip is %s\n", chip->prefix);
+        if (strstr(chip->prefix, "core" ) != NULL){			//Bad Idea : seeing if the chip found is CPU core chip?
+				  do_a_print(chip);
+			    }
+        else{
+          /*Nothing to do here!*/
+        }
+		  cnt++;
+	  }
 	return cnt;
 }
 
@@ -171,10 +169,18 @@ void print_chip(const sensors_chip_name *name)
 {
 	const sensors_feature *feature;
 	int i, label_size;
-
+  i=0;
+  //printf("name->prefix : %s\n", name->prefix);
 	label_size = get_label_size(name);
+  //printf("label_size : %d\n", label_size);
   feature = sensors_get_features(name, &i);
-  print_chip_temp(name, feature, label_size);
+  //printf("feature->name : %s\n", feature->name);
+  if (feature->type == SENSORS_FEATURE_TEMP){
+    print_chip_temp(name, feature, label_size);
+  }
+  else{
+    printf("Feature was not TEMP");
+  }
 
 }
 
@@ -195,7 +201,7 @@ static double get_value(const sensors_chip_name *name,
 
 int main(int argc, char *argv[]){
 
-	int c, i, err, repeat_seconds_val;
+	int c, i, err, repeat_seconds_val=0;
 		
 //    const char *repeat_seconds;
   	struct option long_opts[] =  {
@@ -241,7 +247,7 @@ int main(int argc, char *argv[]){
 	}
   else {
 	  for (i=0; i<repeat_seconds_val; i++){
-    err=do_the_real_work(NULL, &err);
+      err=do_the_real_work(NULL, &err);
       if(!err){
       printf("Error with do_the_real_work() in %s\n", __PRETTY_FUNCTION__);
       }
