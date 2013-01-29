@@ -1,0 +1,4 @@
+#!/bin/sh
+
+wk-heartbeat --nb_thread 2 --delay 100
+
