@@ -140,6 +140,7 @@ static void print_chip_temp(const sensors_chip_name *name,
 		if (sf && get_input_value(name, sf, &val) == 0) {
 			get_input_value(name, sf, &val);
 			printf("%+6.1f%s  ", val, " deg C");
+      tracepoint(cputemp, temp, val);
 		} else
 			printf("     N/A  ");
 	}

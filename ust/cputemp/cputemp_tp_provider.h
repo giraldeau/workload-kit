@@ -31,9 +31,9 @@
 #include <lttng/tracepoint.h> 
 TRACEPOINT_EVENT(
 	cputemp,
-	msg,
-	TP_ARGS(char *, text),
-	TP_FIELDS(ctf_string(msg, text))
+	temp,
+	TP_ARGS(double, temp),
+	TP_FIELDS(ctf_float(double, sue, temp))
 )
 
 #endif /* _CPUTEMP_PROVIDER_H */
