@@ -1,0 +1,7 @@
+#!/bin/sh
+
+wk-reparent
+
+# sleeps until the reparent children exits
+
+sleep 2

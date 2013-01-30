@@ -1,6 +1,10 @@
 /*
  * bossthread.c
  *
+ *	Creates 4 threads with increasing amount of computation. Start and
+ *	join is done in increasing order of computation amount. One UST event
+ *	is recorded at the beginning and the end of the processing.
+ *
  *  Created on: 2011-02-18
  *      Author: francis
  */

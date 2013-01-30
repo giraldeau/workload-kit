@@ -77,6 +77,7 @@ static int parse_opts(int argc, char **argv, struct vars *vars) {
         { 0, 0, 0, 0}
     };
     int idx;
+    memset(vars, 0, sizeof(struct vars));
 
     while ((opt = getopt_long(argc, argv, "hs:f:", options, &idx)) != -1) {
         switch(opt) {

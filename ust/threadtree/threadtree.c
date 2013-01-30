@@ -1,6 +1,11 @@
 /*
  * threadtree.c
  *
+ * Spawns a tree of threads to simulate distributed, staged computation. Three
+ * types of UST events are recorded: start, fork and exit. The ID of threads
+ * are recorded. This is an example of a method to recover the critical path
+ * of a computation from userspace.
+ *
  *  Created on: 2012-05-27
  *      Author: francis
  */

@@ -1,0 +1,3 @@
+#!/bin/sh
+
+wk-lockfight --file /tmp/lockfight.lock --sleep 100
