@@ -47,7 +47,8 @@ static void print_version(){
 static void print_long_help(void)
 {
 	printf("Usage: %s [OPTION]... [CHIP]...\n", PROGRAM);
-	puts("  -s, --repeat-seconds  Specify how many CPU temp samples are to be taken\n"
+	puts("  -t, --sample-time     Specify time between each observation sample\n"
+       "  -r, --repeat          Specify how many times to repeat observation\n"
 	     "  -h, --help            Display this help text\n"
 	     "  -v, --version         Display the program version\n"
 	     );
@@ -202,18 +203,19 @@ static double get_value(const sensors_chip_name *name,
 
 int main(int argc, char *argv[]){
 
-	int c, i, err, repeat_seconds_val=0;
-		
-//    const char *repeat_seconds;
+	int c, i, err, repeat_val=0;    // 0 by default
+  int sample_time=500;            // 500ms by default.
+
   	struct option long_opts[] =  {
 			{ "help", no_argument, NULL, 'h' },
 			{ "version", no_argument, NULL, 'v'},
-			{ "repeat-seconds", required_argument, NULL, 's'},
+			{ "sample-time", required_argument, NULL, 't'},
+			{ "repeat", required_argument, NULL, 'r'},
 			{ 0, 0, 0, 0 }
 		};
 
 		while (1) {
-			c = getopt_long(argc, argv, "hvfs:", long_opts, NULL);
+			c = getopt_long(argc, argv, "hvt:r:", long_opts, NULL);
 			if (c == EOF)
 				break;
 			switch(c) {
@@ -227,11 +229,12 @@ int main(int argc, char *argv[]){
 			case 'v':
 				print_version();
 				exit(0);
-			case 's':
-//				repeat_seconds = optarg;
-        repeat_seconds_val = atoi(optarg);
-				break;
-
+			case 'r':
+        repeat_val = atoi(optarg);
+        break;
+      case 't':
+        sample_time = atoi(optarg);
+        break;
 			default:
 				fprintf(stderr,
 					"Internal error while parsing options!\n");
@@ -247,12 +250,12 @@ int main(int argc, char *argv[]){
     return 1;
 	}
   else {
-	  for (i=0; i<repeat_seconds_val; i++){
+	  for (i=1; i<repeat_val; i++){
       err=do_the_real_work(NULL, &err);
       if(!err){
       printf("Error with do_the_real_work() in %s\n", __PRETTY_FUNCTION__);
       }
-    sleep(1);
+    usleep(sample_time*1000);
     }
       //Start taking readings
         if (!do_the_real_work(NULL, &err)) {
