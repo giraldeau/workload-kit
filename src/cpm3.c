@@ -222,6 +222,7 @@ void server()
 {
 	ctx_t *ctx = make_ctx(SIZE);
 	ctx->sock = make_server_socket();
+	ctx->who = SERVER;
 
 	/* both delay */
 	ctx->mili = unit;
@@ -243,6 +244,7 @@ void client()
 {
 	ctx_t *ctx = make_ctx(SIZE);
 	ctx->sock = make_client_socket();
+	ctx->who = CLIENT;
 
 	/* both delay */
 	ctx->mili = unit;

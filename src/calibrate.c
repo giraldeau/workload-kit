@@ -23,6 +23,9 @@ static volatile sig_atomic_t run;
 
 int do_hog(long niters) {
     volatile sig_atomic_t dummy = 1;
+    /* avoids infinite loop with zero delay */
+    if (niters <= 0)
+	niters = 1;
     while (dummy && --niters)
         ;
 
