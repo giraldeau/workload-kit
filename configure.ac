@@ -17,6 +17,15 @@ PKG_PROG_PKG_CONFIG
 PKG_CHECK_MODULES([UST], [lttng-ust], [have_ust="yes"], [have_ust="no"])
 AS_IF([test "x${have_ust}" == "xno"], AC_MSG_ERROR([lttng-ust is required and not found]))
 
+AC_CHECK_HEADER(sensors/sensors.h,,
+	[AC_MSG_ERROR([couldn't find sensors/sensors.h])]
+)
+AC_CHECK_LIB(sensors, sensors_get_detected_chips,
+	[SENSORS_LIBS="-lsensors" ;],
+	[AC_MSG_ERROR([couldn't find -lsensors])]
+)
+AC_SUBST(SENSORS_LIBS)
+
 AC_OPENMP
 
 # be silent by default
