@@ -10,5 +10,5 @@ for pid in $P; do
     wait $pid
 done
 
-rm $D
+rm -rf $D
 
