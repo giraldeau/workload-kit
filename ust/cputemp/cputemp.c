@@ -34,6 +34,8 @@
 #define PROGRAM "wk-cputemp"
 #define PROG_VERSION "0.0.1"
 
+float curr_val_buff; //global value for current temp
+
 static void print_short_help(void)
 {
 	printf("Try `%s -h' for more information\n", PROGRAM);
@@ -112,6 +114,17 @@ static int get_input_value(const sensors_chip_name *name,
           return err;
 }
 
+/* Checks if the current temp value has changed */
+static int check_gen_trace(float curr_val){
+    if(curr_val_buff != curr_val){
+      curr_val_buff = curr_val;
+      return 1;
+    }
+    else{
+      return 0;
+    }
+}
+
 static void print_chip_temp(const sensors_chip_name *name,
 			    const sensors_feature *feature,
 			    int label_size)
@@ -140,8 +153,13 @@ static void print_chip_temp(const sensors_chip_name *name,
 					    SENSORS_SUBFEATURE_TEMP_INPUT);
 		if (sf && get_input_value(name, sf, &val) == 0) {
 			get_input_value(name, sf, &val);
-			printf("%+6.1f%s  ", val, " deg C");
-      tracepoint(cputemp, temp, val);
+      printf("%+6.1f%s \n", val, " deg C");
+      if (check_gen_trace(val) == 1){;        // generate trace is if
+        tracepoint(cputemp, temp, val);       // temperature value changes
+      }
+      else{
+        /*Nothing to do here*/
+      }
 		} else
 			printf("     N/A  ");
 	}
@@ -172,11 +190,8 @@ void print_chip(const sensors_chip_name *name)
 	const sensors_feature *feature;
 	int i, label_size;
   i=0;
-  //printf("name->prefix : %s\n", name->prefix);
 	label_size = get_label_size(name);
-  //printf("label_size : %d\n", label_size);
   feature = sensors_get_features(name, &i);
-  //printf("feature->name : %s\n", feature->name);
   if (feature->type == SENSORS_FEATURE_TEMP){
     print_chip_temp(name, feature, label_size);
   }
