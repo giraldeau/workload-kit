@@ -38,8 +38,6 @@ NOTES
     gcc -g cputemp_tp.c cputemp.c -I./ -lsensors -o coretemp -llttng-ust -ldl
 
 TODO
-  * Generate trace only when temp changes and not everytime when print_chip()
-    is called
-  * Also maybe find a way to adaptively increase samples and repeat times 
+  * Maybe find a way to adaptively increase samples and repeat times 
     as heating increases
   
