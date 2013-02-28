@@ -12,8 +12,8 @@
 
 void throw(const char *msg)
 {
-    perror(msg);
-    exit(1);
+	perror(msg);
+	exit(1);
 }
 
 int do_sleep(int mili) {
@@ -23,9 +23,13 @@ int do_sleep(int mili) {
 	t.tv_sec = mili / 1000;
 	t.tv_nsec = (mili % 1000) * 1000000;
 
-    gettimeofday(&t1, NULL);
+	if (mili == 0)
+		return 0;
+
+	gettimeofday(&t1, NULL);
 	if (nanosleep(&t, NULL) < 0) {
 		return -1;
 	}
-    gettimeofday(&t2, NULL);
+	gettimeofday(&t2, NULL);
+	return 0;
 }

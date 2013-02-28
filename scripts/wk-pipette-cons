@@ -1,5 +1,5 @@
 #!/bin/sh
 
-# producer is blocking
+# consumer is slow, producer waits after 2 data writes
 
-wk-pipette -v -p 1000 -n 4 -s 32768
+wk-pipette -v -c 1000 -n 4 -s 32768

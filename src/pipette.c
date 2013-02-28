@@ -136,6 +136,7 @@ int producer(int fd, int size, int count, int delay) {
 		return -1;
 	}
 
+	msg("producer start");
 	for (i = 0; i < count; i++) {
 		memset(buf, i, size);
 		do_sleep(delay);
@@ -159,6 +160,7 @@ int consumer(int fd, int size, int count, int delay) {
 		return -1;
 	}
 
+	msg("consumer start");
 	for (i = 0; i < count; i++) {
 		do_sleep(delay);
 		if (read(fd, buf, size) < 0) {
