@@ -6,30 +6,30 @@ Frodo Looijaard <frodol@dds.nl>
 Jean Delvare <khali@linux-fr.org> et al.
 
 DESCRIPTION
-  This small utility looks for the coretemp chip on your machine and prints out 
+  This small utility looks for the coretemp chip on your machine and prints out
   the physical chip temperature (hopefully). It usues the lm-sensors library
   to fetch temperature data and is based on the 'sensors' program. The aim for
   now is to generate traces as the cpu temperature changes and correlate it with
   increasing workload
 
 DEPENDENCIES
-  Requires the following packages 
+  Requires the following packages
 
-  For Fedora : 
+  For Fedora :
     1. lm_sensors-devel
     2. lm_sensors-lib
     3. lm_sensors
 
-  For Ubuntu : 
+  For Ubuntu :
     1. lm-sensors
-    2. lm-sensors-dev
+    2. libsensors4-dev
 
   Also requires workload-kit, lttng and its dependencies
 
 HOWTO
-  Before running application do the following first : 
-  
-  $sensors-detect 
+  Before running application do the following first :
+
+  $sensors-detect
 
   You can then run 'wk-temp -h' for detailed usage
 
@@ -38,6 +38,6 @@ NOTES
     gcc -g cputemp_tp.c cputemp.c -I./ -lsensors -o coretemp -llttng-ust -ldl
 
 TODO
-  * Maybe find a way to adaptively increase samples and repeat times 
+  * Maybe find a way to adaptively increase samples and repeat times
     as heating increases
-  
+

@@ -19,6 +19,7 @@ C standard library is required.
 Build libraries required:
 
   * liblttng-ust > 2.0
+  * libsensors4-dev
 
 Generating traces requires:
 
