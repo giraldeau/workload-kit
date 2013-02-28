@@ -201,22 +201,5 @@ int main(int argc, char **argv) {
 	for (i = 0; i < 2; i++) {
 		wait(NULL);
 	}
-	/*
-	mode_t perms = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
-	int out_flags = O_CREAT | O_TRUNC | O_WRONLY;
-	if (vars->sync) {
-		out_flags = out_flags | O_SYNC;
-	}
-	int out = open(vars->file, out_flags, perms);
-	if (out < 0) {
-		throw(0, errno, "error opening output file %s", vars->file);
-		return EXIT_FAILURE;
-	}
-
-	if (do_io(out, vars->size, vars->count) < 0) {
-		printf("error occured while performing I/O\n");
-		return EXIT_FAILURE;
-	}
-	*/
 	return EXIT_SUCCESS;
 }
