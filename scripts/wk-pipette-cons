@@ -1,0 +1,5 @@
+#!/bin/sh
+
+# producer is blocking
+
+wk-pipette -v -p 1000 -n 4 -s 32768
