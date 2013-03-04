@@ -128,8 +128,8 @@ static void parse_opts(int argc, char **argv, struct vars *vars) {
 		vars->count = DEFAULT_BLOCK_COUNT;
 		printf("using default count %d\n", vars->count);
 	}
-	ARG_CHECK(vars->size > 0, "SIZE must be positive");
-	ARG_CHECK(vars->count > 0, "COUNT must be positive");
+	ARG_CHECK(vars->size <= 0, "SIZE must be positive");
+	ARG_CHECK(vars->count <= 0, "COUNT must be positive");
 	ARG_CHECK((vars->size * vars->count) > INT_MAX, "Total transfer overflows INT_MAX");
 }
 
