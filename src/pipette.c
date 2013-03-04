@@ -44,6 +44,7 @@ struct vars {
 	int delay_cons;
 	int size;
 	int count;
+	int rrobin;
 	int fd[2];
 };
 
@@ -58,6 +59,7 @@ static void usage(void) {
 	fprintf(stderr, "  --count		set number of blocs\n");
 	fprintf(stderr, "  --delay-prod   delay to produce each block\n");
 	fprintf(stderr, "  --delay-cons   delay to consume each block\n");
+	fprintf(stderr, "  --round-robin  cycle the delay between producer and consumer\n");
 	fprintf(stderr, "  --verbose	  verbose mode\n");
 	exit(EXIT_FAILURE);
 }
@@ -88,12 +90,13 @@ static void parse_opts(int argc, char **argv, struct vars *vars) {
 		{ "count",			1, 0, 'n' },
 		{ "delay-prod",		1, 0, 'p' },
 		{ "delay-cons",		1, 0, 'c' },
+		{ "round-robin",	0, 0, 'r' },
 		{ "verbose",		0, 0, 'v' },
 		{ 0, 0, 0, 0 }
 	};
 	int idx;
 
-	while ((opt = getopt_long(argc, argv, "hvs:n:p:c:", options, &idx)) != -1) {
+	while ((opt = getopt_long(argc, argv, "hvrs:n:p:c:", options, &idx)) != -1) {
 		switch(opt) {
 		case 's':
 			vars->size = atoi(optarg);
@@ -106,6 +109,9 @@ static void parse_opts(int argc, char **argv, struct vars *vars) {
 			break;
 		case 'c':
 			vars->delay_cons = atoi(optarg);
+			break;
+		case 'r':
+			vars->rrobin = 1;
 			break;
 		case 'v':
 			verbose = 1;
@@ -128,12 +134,23 @@ static void parse_opts(int argc, char **argv, struct vars *vars) {
 		vars->count = DEFAULT_BLOCK_COUNT;
 		printf("using default count %d\n", vars->count);
 	}
-	ARG_CHECK(vars->size <= 0, "SIZE must be positive");
-	ARG_CHECK(vars->count <= 0, "COUNT must be positive");
+	ARG_CHECK(vars->delay_prod < 0, "DELAY_PROD must be positive");
+	ARG_CHECK(vars->delay_cons < 0, "DELAY_CONS must be positive");
+	ARG_CHECK(vars->size < 0, "SIZE must be positive");
+	ARG_CHECK(vars->count < 0, "COUNT must be positive");
 	ARG_CHECK((vars->size * vars->count) > INT_MAX, "Total transfer overflows INT_MAX");
 }
 
-int producer(int fd, int size, int count, int delay) {
+void do_sleep_rrobin(int id, int turn, int rrobin, int delay) {
+	if (rrobin) {
+		if ((turn + id) % 2)
+			do_sleep(delay);
+	} else {
+		do_sleep(delay);
+	}
+}
+
+int producer(int fd, int size, int count, int delay, int rrobin) {
 	int i;
 	char *buf;
 
@@ -145,7 +162,7 @@ int producer(int fd, int size, int count, int delay) {
 	msg("producer start");
 	for (i = 0; i < count; i++) {
 		memset(buf, i, size);
-		do_sleep(delay);
+		do_sleep_rrobin(WRITE, i, rrobin, delay);
 		if (do_transfer(write, fd, buf, size) < 0)
 			return -1;
 		msg("producer %d", i);
@@ -155,7 +172,7 @@ int producer(int fd, int size, int count, int delay) {
 	return 0;
 }
 
-int consumer(int fd, int size, int count, int delay) {
+int consumer(int fd, int size, int count, int delay, int rrobin) {
 	int i;
 	int j;
 	int ret;
@@ -169,7 +186,7 @@ int consumer(int fd, int size, int count, int delay) {
 
 	msg("consumer start");
 	for (i = 0; i < count; i++) {
-		do_sleep(delay);
+		do_sleep_rrobin(READ, i, rrobin, delay);
 		if (do_transfer(read, fd, buf, size) < 0)
 			return -1;
 		sum = 0;
@@ -193,7 +210,7 @@ int do_transfer(exch f, int fd, char *buf, int size) {
 		chunk = PAGE_SIZE;
 		if ((size - len) < PAGE_SIZE)
 			chunk = size - len;
-		if ((ret = f(fd, buf, chunk)) < 0) {
+		if ((ret = f(fd, buf + len, chunk)) < 0) {
 			return -1;
 		}
 		len += ret;
@@ -216,12 +233,14 @@ int main(int argc, char **argv) {
 
 	if (fork() == 0) {
 		close(vars->fd[READ]);
-		return producer(vars->fd[WRITE], vars->size, vars->count, vars->delay_prod);
+		return producer(vars->fd[WRITE], vars->size, vars->count,
+				vars->delay_prod, vars->rrobin);
 	}
 
 	if (fork() == 0) {
 		close(vars->fd[WRITE]);
-		return consumer(vars->fd[READ], vars->size, vars->count, vars->delay_cons);
+		return consumer(vars->fd[READ], vars->size, vars->count,
+				vars->delay_cons, vars->rrobin);
 	}
 	for (i = 0; i < 2; i++) {
 		wait(NULL);
