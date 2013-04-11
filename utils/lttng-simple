@@ -20,8 +20,8 @@ LTTNG="lttng"
 
 usage = """usage: %prog [options] -- [command]
 
-Run command under tracing. If no kernel or ust option is provided, 
-then trace command under kernel, ust and both tracers enabled. The type of 
+Run command under tracing. If no kernel or ust option is provided,
+then trace command under kernel, ust and both tracers enabled. The type of
 the trace is indicated by appending a suffix to the trace output directory."""
 
 dry_run = False
@@ -47,7 +47,7 @@ def do_trace(cmd, session, outdir, kernel, ust):
     # generate random uuid
     usession = session + "-" + str(uuid.uuid4())
 
-    logging.info("start tracing: " + usession)  
+    logging.info("start tracing: " + usession)
     # Checks and cleanup
     if (os.path.isdir(out)):
         if (clear_trace == True):
@@ -58,7 +58,7 @@ def do_trace(cmd, session, outdir, kernel, ust):
                 logging.debug("Would remove trace: " + out)
         else:
             logging.warning("Append to existing trace: " + out)
-        
+
     # Step 1: start session
     ret = cmd_stub([LTTNG, "create", usession, "-o", out])
     # if the session is stalled, then destroy it and try again
@@ -67,7 +67,7 @@ def do_trace(cmd, session, outdir, kernel, ust):
         ret = cmd_stub([LTTNG,"create", usession, "-o", out])
         if (ret != 0):
             raise Exception("Can't create session " + usession)
-    
+
     # Step 2: enable required events
     if (kernel):
         if (cmd_stub([LTTNG, "enable-channel", "k", "-k", "--num-subbuf", "32"]) != 0):
@@ -81,24 +81,26 @@ def do_trace(cmd, session, outdir, kernel, ust):
             raise Exception("Enable userspace events failed")
         if (cmd_stub([LTTNG, "add-context", "-c", "u", "-u", "-t", "vpid", "-t", "vtid"]) != 0):
             raise Exception("Add vpid and vtid events failed")
-    
+
     # Step 3: start tracing
     ret = cmd_stub([LTTNG, "start"])
     if (ret != 0):
         raise Exception("Start tracing failed")
-    
+
     # Step 4: run the program under tracing
     # Do not check the return value
+    time.sleep(1)
     cmd_stub(cmd)
-    
+    time.sleep(1)
+
     # Step 5: tear down
     cmd_stub([LTTNG,"stop"])
     ret = cmd_stub([LTTNG,"destroy", usession])
     if (ret != 0):
         raise Exception("Destroy session " + usession + " failed")
     logging.info("done tracing: " + usession)
-    
-if __name__=="__main__":            
+
+if __name__=="__main__":
     parser = OptionParser(usage=usage)
     parser.add_option("-k", "--kernel", dest="kernel", default=False, action="store_true", help="Trace only the kernel")
     parser.add_option("-u", "--ust", dest="ust", default=False, action="store_true", help="Trace only user space")
@@ -107,15 +109,15 @@ if __name__=="__main__":
     parser.add_option("-l", "--log", dest="log", metavar="FILE", help="Log file", default=None)
     parser.add_option("-n", "--dry-run", dest="dry_run", default=False, action="store_true", help="Do not execute commands")
     parser.add_option("-c", "--clear", dest="clear_trace", default=False, action="store_true", help="Remove previous trace if exists")
-    
+
     (options, args) = parser.parse_args()
-    
+
     # Consider that if no options for kernel or user space is provided
     # do the experiment by tracing kernel, ust and both
     if (not (options.kernel or options.ust)):
         options.kernel = True
         options.ust = True
-    
+
     dry_run = options.dry_run
     clear_trace = options.clear_trace
     fmt = '%(asctime)s %(levelname)s: %(message)s'
@@ -123,10 +125,10 @@ if __name__=="__main__":
         logging.basicConfig(filename=options.log, level=logging.DEBUG, format=fmt)
     else:
         logging.basicConfig(level=logging.DEBUG, format=fmt)
-    
+
     logger = logging.getLogger()
     log_stream = logger.handlers[0].stream
-    
+
     targets = []
     if (options.batch is None):
         if (args is not None and type(args) is list and len(args) > 0):
@@ -140,12 +142,12 @@ if __name__=="__main__":
             if (os.path.isfile(file)):
                 target = {"name":exe, "cmd":[file]}
                 targets.append(target)
-    
+
     if (len(targets) == 0):
         print "Error: Nothing to trace!"
         parser.print_help()
         sys.exit(1)
-        
+
     try:
         for t in targets:
             if (options.kernel):
@@ -158,4 +160,4 @@ if __name__=="__main__":
         logging.error(str(e))
     else:
         logging.debug("done")
-    
+
