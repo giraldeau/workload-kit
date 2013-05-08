@@ -1,7 +1,15 @@
 #!/bin/sh -x
 
-DATE=$(date "+%Y%m%d")
-TAR=lttng-traceset-$DATE.tar.bz2
+SRV=fgiraldeau@secretaire.dorsal.polymtl.ca
+SRC=/tmp/traceset/ready/
+DST=public_html/traceset/
 
-scp $TAR fgiraldeau@secretaire.dorsal.polymtl.ca:public_html/traceset/
-ssh fgiraldeau@secretaire.dorsal.polymtl.ca "cd public_html/traceset/; ln -sf $TAR lttng-traceset-current.tar.bz2"
+echo rsync -av $SRC $SRV:$DST
+
+for tag in kernel-full kernel-full-nosys kernel-basic kernel-basic-nosys ust-and-kernel ust-only; do
+	F=$(find $SRC -maxdepth 1 -type f -name "*$tag*" | sort | tail -n1)
+	if [ -n "$F" ]; then
+		LATEST=$(basename $F)
+		echo ssh $SRV "cd $DST; ln -sf $LATEST lttng-traceset-$tag-current.tar.bz2"
+	fi
+done
