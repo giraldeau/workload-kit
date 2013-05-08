@@ -8,7 +8,11 @@ script_dir_k := scripts/kernel
 files_k := $(foreach script,$(script_dir_k),$(wildcard $(script)/*))
 script_dest_k := $(DESTDIR)$(pkgdatadir)/$(script_dir_k)
 
-SUBDIRS = src utils ust tests
+if HAVE_UST
+  USTDIR = ust
+endif
+
+SUBDIRS = src utils $(USTDIR) tests
 EXTRA_DIST = $(script_dir_u) $(script_dir_k) doc utils
 
 install-data-local:
