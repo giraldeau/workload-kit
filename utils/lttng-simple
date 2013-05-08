@@ -27,27 +27,39 @@ the trace is indicated by appending a suffix to the trace output directory."""
 dry_run = False
 log_stream = sys.stdout
 clear_trace = False
+current = ""
 
-def cmd_stub(cmds):
+def cmd_stub(cmds, check):
     logging.debug("exec: " + string.join(cmds, " "))
     retcode = 0
     if (dry_run == False):
         retcode = subprocess.call(cmds, stdout=log_stream, stderr=log_stream)
         logging.debug("exit: " + str(retcode))
-    return retcode
+    if (check and retcode != 0):
+        cmd_stub([LTTNG,"destroy", current], False)
+        raise Exception("command failed")
 
-def do_trace(cmd, session, outdir, kernel, ust):
+def load_event_list(path):
+    f = open(path)
+    orig = f.readlines();
+    done = []
+    for ev in orig:
+        done.append(ev.strip())
+    return done
+    
+
+def do_trace(cmd, session, options, kernel, ust):
     if (not (kernel or ust)):
         return
     if (kernel):
         session += "-k"
     if (ust):
         session += "-u"
-    out = join(outdir, session)
+    out = join(options.output, session)
     # generate random uuid
-    usession = session + "-" + str(uuid.uuid4())
+    current = session + "-" + str(uuid.uuid4())
 
-    logging.info("start tracing: " + usession)
+    logging.info("start tracing: " + current)  
     # Checks and cleanup
     if (os.path.isdir(out)):
         if (clear_trace == True):
@@ -60,47 +72,42 @@ def do_trace(cmd, session, outdir, kernel, ust):
             logging.warning("Append to existing trace: " + out)
 
     # Step 1: start session
-    ret = cmd_stub([LTTNG, "create", usession, "-o", out])
-    # if the session is stalled, then destroy it and try again
-    if (ret == 28):
-        cmd_stub([LTTNG, "destroy", usession])
-        ret = cmd_stub([LTTNG,"create", usession, "-o", out])
-        if (ret != 0):
-            raise Exception("Can't create session " + usession)
-
+    try:
+        cmd_stub([LTTNG, "create", current, "-o", out], True)
+    except Exception as e:
+        # if it fails, it may be stalled, try again, but make failure fatal
+        cmd_stub([LTTNG, "destroy", current], False)
+        cmd_stub([LTTNG, "create", current, "-o", out], True)
+    
     # Step 2: enable required events
     if (kernel):
-        if (cmd_stub([LTTNG, "enable-channel", "k", "-k", "--num-subbuf", "32"]) != 0):
-            raise Exception("Enable kernel channel failed")
-        if (cmd_stub([LTTNG, "enable-event", "-c", "k", "-a", "-k"]) != 0):
-            raise Exception("Enable kernel events failed")
+        cmd_stub([LTTNG, "enable-channel", "k", "-k", "--num-subbuf", "32"], True)
+        if (options.syscall):
+            cmd_stub([LTTNG, "enable-event", "-c", "k", "-a", "-k", "--syscall"], True)
+        if (options.evlist is None):
+            cmd_stub([LTTNG, "enable-event", "-c", "k", "-a", "-k"], True)
+        else:
+            list = load_event_list(options.evlist)
+            for ev in list:
+                cmd_stub([LTTNG, "enable-event", "-k", "-c", "k", ev], True)
     if (ust):
-        if (cmd_stub([LTTNG, "enable-channel", "u", "-u"]) != 0):
-            raise Exception("Enable userspace channel failed")
-        if (cmd_stub([LTTNG, "enable-event", "-c", "u", "-a", "-u"]) != 0):
-            raise Exception("Enable userspace events failed")
-        if (cmd_stub([LTTNG, "add-context", "-c", "u", "-u", "-t", "vpid", "-t", "vtid"]) != 0):
-            raise Exception("Add vpid and vtid events failed")
-
+        cmd_stub([LTTNG, "enable-channel", "u", "-u"], True)
+        cmd_stub([LTTNG, "enable-event", "-c", "u", "-a", "-u"], True)
+        cmd_stub([LTTNG, "add-context", "-c", "u", "-u", "-t", "vpid", "-t", "vtid"], True)
+    
     # Step 3: start tracing
-    ret = cmd_stub([LTTNG, "start"])
-    if (ret != 0):
-        raise Exception("Start tracing failed")
-
+    cmd_stub([LTTNG, "start"], True)
+    
     # Step 4: run the program under tracing
     # Do not check the return value
-    time.sleep(1)
-    cmd_stub(cmd)
-    time.sleep(1)
-
+    cmd_stub(cmd, False)
+    
     # Step 5: tear down
-    cmd_stub([LTTNG,"stop"])
-    ret = cmd_stub([LTTNG,"destroy", usession])
-    if (ret != 0):
-        raise Exception("Destroy session " + usession + " failed")
-    logging.info("done tracing: " + usession)
-
-if __name__=="__main__":
+    cmd_stub([LTTNG,"stop"], False)
+    cmd_stub([LTTNG,"destroy", current], False)
+    logging.info("done tracing: " + current)
+    
+if __name__=="__main__":            
     parser = OptionParser(usage=usage)
     parser.add_option("-k", "--kernel", dest="kernel", default=False, action="store_true", help="Trace only the kernel")
     parser.add_option("-u", "--ust", dest="ust", default=False, action="store_true", help="Trace only user space")
@@ -108,6 +115,8 @@ if __name__=="__main__":
     parser.add_option("-b", "--batch", dest="batch", help="Run and trace all executables from this dir", metavar="DIR")
     parser.add_option("-l", "--log", dest="log", metavar="FILE", help="Log file", default=None)
     parser.add_option("-n", "--dry-run", dest="dry_run", default=False, action="store_true", help="Do not execute commands")
+    parser.add_option("-e", "--enable-event-list", dest="evlist", default=None, help="Enable only these events")
+    parser.add_option("-s", "--syscall", dest="syscall", default=False, action="store_true", help="Enable syscall tracing")
     parser.add_option("-c", "--clear", dest="clear_trace", default=False, action="store_true", help="Remove previous trace if exists")
 
     (options, args) = parser.parse_args()
@@ -147,17 +156,15 @@ if __name__=="__main__":
         print "Error: Nothing to trace!"
         parser.print_help()
         sys.exit(1)
-
     try:
         for t in targets:
             if (options.kernel):
-                do_trace(t["cmd"], t["name"], options.output, kernel=True, ust=False)
+                do_trace(t["cmd"], t["name"], options, kernel=True, ust=False)
             if (options.ust):
-                do_trace(t["cmd"], t["name"], options.output, kernel=False, ust=True)
+                do_trace(t["cmd"], t["name"], options, kernel=False, ust=True)
             if (options.ust and options.kernel):
-                do_trace(t["cmd"], t["name"], options.output, kernel=True, ust=True)
+                do_trace(t["cmd"], t["name"], options, kernel=True, ust=True)
     except Exception as e:
         logging.error(str(e))
     else:
         logging.debug("done")
-
