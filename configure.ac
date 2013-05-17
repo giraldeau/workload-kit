@@ -68,6 +68,7 @@ AS_IF([test "x$ust_support" == "xyes"],
     ust/heartbeat/Makefile
     ust/hello-openmp/Makefile
     ust/threadtree/Makefile
+    ust/tpw/Makefile
 ])])
 
 AS_IF([test "x$ust_support" == "xyes" -a "x$cputemp_support" == "xyes"],
