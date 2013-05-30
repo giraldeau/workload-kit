@@ -20,6 +20,7 @@ PKG_PATH=$HTML/$PKG/
 #git clean -f -d
 ./bootstrap
 ./configure
+make ChangeLog
 make dist
 
 if [ ! -f ${TGZ} ]; then
