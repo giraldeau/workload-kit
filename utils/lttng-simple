@@ -29,11 +29,14 @@ log_stream = sys.stdout
 clear_trace = False
 current = ""
 
-def cmd_stub(cmds, check):
+def cmd_stub(cmds, check, cmd_env=None, with_shell=False):
+    if cmd_env is None:
+        cmd_env = os.environ
+    logging.debug("LD_PRELOAD=" + cmd_env.get("LD_PRELOAD", ""))
     logging.debug("exec: " + string.join(cmds, " "))
     retcode = 0
     if (dry_run == False):
-        retcode = subprocess.call(cmds, stdout=log_stream, stderr=log_stream)
+        retcode = subprocess.call(cmds, stdout=log_stream, stderr=log_stream, env=cmd_env)
         logging.debug("exit: " + str(retcode))
     if (check and retcode != 0):
         cmd_stub([LTTNG,"destroy", current], False)
@@ -100,7 +103,11 @@ def do_trace(cmd, session, options, kernel, ust):
     
     # Step 4: run the program under tracing
     # Do not check the return value
-    cmd_stub(cmd, False)
+    cmd_env = os.environ;
+    if options.libc_wrapper:
+        cmd_env = os.environ.copy()
+        cmd_env["LD_PRELOAD"] = "liblttng-ust-libc-wrapper.so"
+    cmd_stub(cmd, False, cmd_env)
     
     # Step 5: tear down
     cmd_stub([LTTNG,"stop"], False)
@@ -116,6 +123,7 @@ if __name__=="__main__":
     parser.add_option("-l", "--log", dest="log", metavar="FILE", help="Log file", default=None)
     parser.add_option("-n", "--dry-run", dest="dry_run", default=False, action="store_true", help="Do not execute commands")
     parser.add_option("-e", "--enable-event-list", dest="evlist", default=None, help="Enable only these events")
+    parser.add_option("--enable-libc-wrapper", dest="libc_wrapper", default=False, action="store_true", help="Enable UST libc wrapper")
     parser.add_option("-s", "--syscall", dest="syscall", default=False, action="store_true", help="Enable syscall tracing")
     parser.add_option("-c", "--clear", dest="clear_trace", default=False, action="store_true", help="Remove previous trace if exists")
 
