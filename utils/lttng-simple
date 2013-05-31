@@ -94,7 +94,7 @@ def do_trace(cmd, session, options, kernel, ust):
             for ev in list:
                 cmd_stub([LTTNG, "enable-event", "-k", "-c", "k", ev], True)
     if (ust):
-        cmd_stub([LTTNG, "enable-channel", "u", "-u"], True)
+        cmd_stub([LTTNG, "enable-channel", "u", "-u", "--num-subbuf", "4096"], True)
         cmd_stub([LTTNG, "enable-event", "-c", "u", "-a", "-u"], True)
         cmd_stub([LTTNG, "add-context", "-c", "u", "-u", "-t", "vpid", "-t", "vtid"], True)
     
