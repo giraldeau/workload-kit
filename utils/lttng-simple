@@ -50,7 +50,6 @@ def load_event_list(path):
         done.append(ev.strip())
     return done
     
-
 def do_trace(cmd, session, options, kernel, ust):
     if (not (kernel or ust)):
         return
@@ -83,6 +82,7 @@ def do_trace(cmd, session, options, kernel, ust):
         cmd_stub([LTTNG, "create", current, "-o", out], True)
     
     # Step 2: enable required events
+    add_context = False
     if (kernel):
         cmd_stub([LTTNG, "enable-channel", "k", "-k", "--num-subbuf", "32"], True)
         if (options.syscall):
@@ -90,13 +90,18 @@ def do_trace(cmd, session, options, kernel, ust):
         if (options.evlist is None):
             cmd_stub([LTTNG, "enable-event", "-c", "k", "-a", "-k"], True)
         else:
-            list = load_event_list(options.evlist)
-            for ev in list:
+            evlist = load_event_list(options.evlist)
+            for ev in evlist:
                 cmd_stub([LTTNG, "enable-event", "-k", "-c", "k", ev], True)
+            # enable pid/tid context if there is no sched_switch event
+            if (not "sched_switch" in evlist or options.stateless):
+                add_context = True
+                cmd_stub([LTTNG, "add-context", "-k", "-c", "k", "-t" "pid", "-t", "tid"], True)
     if (ust):
         cmd_stub([LTTNG, "enable-channel", "u", "-u", "--num-subbuf", "4096"], True)
         cmd_stub([LTTNG, "enable-event", "-c", "u", "-a", "-u"], True)
-        cmd_stub([LTTNG, "add-context", "-c", "u", "-u", "-t", "vpid", "-t", "vtid"], True)
+        if not kernel or add_context:
+            cmd_stub([LTTNG, "add-context", "-c", "u", "-u", "-t", "vpid", "-t", "vtid"], True)
     
     # Step 3: start tracing
     cmd_stub([LTTNG, "start"], True)
@@ -107,7 +112,11 @@ def do_trace(cmd, session, options, kernel, ust):
     if options.libc_wrapper:
         cmd_env = os.environ.copy()
         cmd_env["LD_PRELOAD"] = "liblttng-ust-libc-wrapper.so"
+
+    # surround cmd with sleep to get a better execution window
+    time.sleep(0.1)
     cmd_stub(cmd, False, cmd_env)
+    time.sleep(0.1)
     
     # Step 5: tear down
     cmd_stub([LTTNG,"stop"], False)
@@ -125,6 +134,7 @@ if __name__=="__main__":
     parser.add_option("-e", "--enable-event-list", dest="evlist", default=None, help="Enable only these events")
     parser.add_option("--enable-libc-wrapper", dest="libc_wrapper", default=False, action="store_true", help="Enable UST libc wrapper")
     parser.add_option("-s", "--syscall", dest="syscall", default=False, action="store_true", help="Enable syscall tracing")
+    parser.add_option("--stateless", dest="stateless", default=False, action="store_true", help="Enable pid/tid context for stateless trace processing")
     parser.add_option("-c", "--clear", dest="clear_trace", default=False, action="store_true", help="Remove previous trace if exists")
 
     (options, args) = parser.parse_args()
