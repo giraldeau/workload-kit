@@ -166,12 +166,12 @@ if __name__=="__main__":
         sys.exit(1)
     try:
         for t in targets:
-            if (options.kernel):
-                do_trace(t["cmd"], t["name"], options, kernel=True, ust=False)
-            if (options.ust):
-                do_trace(t["cmd"], t["name"], options, kernel=False, ust=True)
             if (options.ust and options.kernel):
                 do_trace(t["cmd"], t["name"], options, kernel=True, ust=True)
+            elif (options.kernel):
+                do_trace(t["cmd"], t["name"], options, kernel=True, ust=False)
+            elif (options.ust):
+                do_trace(t["cmd"], t["name"], options, kernel=False, ust=True)
     except Exception as e:
         logging.error(str(e))
     else:
