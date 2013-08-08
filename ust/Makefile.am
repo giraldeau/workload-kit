@@ -2,5 +2,5 @@ if HAVE_CPUTEMP
   CPUTEMPDIR = cputemp
 endif
 
-SUBDIRS = bossthread functrace heartbeat hello-openmp threadtree $(CPUTEMPDIR)
+SUBDIRS = bossthread functrace heartbeat hello-openmp threadtree burnust $(CPUTEMPDIR)
 

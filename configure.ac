@@ -31,13 +31,12 @@ AC_ARG_ENABLE([cputemp],
   [AS_HELP_STRING([--disable-cputemp],
     [disable cputemp])],
   [cputemp_support=$enableval], [cputemp_support=yes])
-
 AS_IF([test "x$cputemp_support" == "xyes"], [
   AC_CHECK_HEADER(sensors/sensors.h, [],
-    [AC_MSG_ERROR([can not find sensors/sensors.h])]),
+    [AC_MSG_ERROR([can not find sensors/sensors.h])])
   AC_CHECK_LIB(sensors, sensors_get_detected_chips,
     [SENSORS_LIBS="-lsensors"],
-    [AC_MSG_ERROR([can not find -lsensors])]),
+    [AC_MSG_ERROR([can not find -lsensors])])
   AC_SUBST(SENSORS_LIBS)
 ])
 
@@ -64,6 +63,7 @@ AC_CONFIG_FILES([Makefile
 AS_IF([test "x$ust_support" == "xyes"],
   [AC_CONFIG_FILES([
     ust/bossthread/Makefile
+    ust/burnust/Makefile
     ust/functrace/Makefile
     ust/heartbeat/Makefile
     ust/hello-openmp/Makefile
