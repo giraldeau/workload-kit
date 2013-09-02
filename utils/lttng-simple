@@ -123,11 +123,16 @@ def do_trace(cmd, session, options, kernel, ust):
     cmd_stub([LTTNG,"destroy", current], False)
     logging.info("done tracing: " + current)
     
-if __name__=="__main__":            
+if __name__=="__main__":
+    # default directory for traces
+    destdir = os.getenv("LTTNG_TRACE_HOME")
+    if destdir is None:
+        destdir = os.getcwd()
+
     parser = OptionParser(usage=usage)
     parser.add_option("-k", "--kernel", dest="kernel", default=False, action="store_true", help="Trace only the kernel")
     parser.add_option("-u", "--ust", dest="ust", default=False, action="store_true", help="Trace only user space")
-    parser.add_option("-o", "--output", dest="output", help="Output base directory for traces", metavar="DIR", default=os.getcwd())
+    parser.add_option("-o", "--output", dest="output", help="Output base directory for traces", metavar="DIR", default=destdir)
     parser.add_option("-b", "--batch", dest="batch", help="Run and trace all executables from this dir", metavar="DIR")
     parser.add_option("-l", "--log", dest="log", metavar="FILE", help="Log file", default=None)
     parser.add_option("-n", "--dry-run", dest="dry_run", default=False, action="store_true", help="Do not execute commands")
@@ -139,6 +144,10 @@ if __name__=="__main__":
     parser.add_option("-c", "--clear", dest="clear_trace", default=False, action="store_true", help="Remove previous trace if exists")
 
     (options, args) = parser.parse_args()
+
+    # try to create base directory if it doesn't exists
+    if not os.path.exists(options.output):
+        os.makedirs(options.output)
 
     # Consider that if no options for kernel or user space is provided
     # do the experiment by tracing kernel, ust and both
