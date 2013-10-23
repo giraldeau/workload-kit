@@ -84,7 +84,7 @@ def do_trace(cmd, session, options, kernel, ust):
     # Step 2: enable required events
     add_context = False
     if (kernel):
-        cmd_stub([LTTNG, "enable-channel", "k", "-k", "--subbuf-size", "32768", "--num-subbuf", "4096"], True)
+        cmd_stub([LTTNG, "enable-channel", "k", "-k", "--subbuf-size", "4096", "--num-subbuf", "4096"], True)
         if (options.syscall):
             cmd_stub([LTTNG, "enable-event", "-c", "k", "-a", "-k", "--syscall"], True)
         if (options.evlist is None):
@@ -98,7 +98,7 @@ def do_trace(cmd, session, options, kernel, ust):
                 add_context = True
                 cmd_stub([LTTNG, "add-context", "-k", "-c", "k", "-t" "pid", "-t", "tid"], True)
     if (ust):
-        cmd_stub([LTTNG, "enable-channel", "u", "-u", "--subbuf-size", "32768", "--num-subbuf", "4096"], True)
+        cmd_stub([LTTNG, "enable-channel", "u", "-u", "--subbuf-size", "4096", "--num-subbuf", "4096"], True)
         cmd_stub([LTTNG, "enable-event", "-c", "u", "-a", "-u"], True)
         if not kernel or add_context:
             cmd_stub([LTTNG, "add-context", "-c", "u", "-u", "-t", "vpid", "-t", "vtid"], True)
