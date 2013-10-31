@@ -43,6 +43,10 @@ def cmd_stub(cmds, check, cmd_env=None, with_shell=False):
         raise Exception("command failed")
 
 def load_event_list(path):
+    defaultLocation = os.getenv("HOME") + "/.workload-kit/"
+    if not os.path.exists(path):
+        if os.path.exists(defaultLocation + path):
+            path = defaultLocation + path
     f = open(path)
     orig = f.readlines();
     done = []
