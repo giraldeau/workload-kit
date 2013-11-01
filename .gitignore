@@ -1,4 +1,5 @@
 *~
+config
 .cproject
 .project
 .pydevproject
@@ -53,3 +54,4 @@ ust/functrace/wk-functrace
 ust/heartbeat/wk-heartbeat
 ust/hello-openmp/wk-hello-openmp
 ust/threadtree/wk-threadtree
+ust/burnust/wk-burnust

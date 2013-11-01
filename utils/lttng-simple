@@ -43,6 +43,10 @@ def cmd_stub(cmds, check, cmd_env=None, with_shell=False):
         raise Exception("command failed")
 
 def load_event_list(path):
+    defaultLocation = os.getenv("HOME") + "/.workload-kit/"
+    if not os.path.exists(path):
+        if os.path.exists(defaultLocation + path):
+            path = defaultLocation + path
     f = open(path)
     orig = f.readlines();
     done = []
@@ -96,7 +100,7 @@ def do_trace(cmd, session, options, kernel, ust):
             # enable pid/tid context if there is no sched_switch event
             if (not "sched_switch" in evlist or options.stateless):
                 add_context = True
-                cmd_stub([LTTNG, "add-context", "-k", "-c", "k", "-t" "pid", "-t", "tid"], True)
+                cmd_stub([LTTNG, "add-context", "-k", "-c", "k", "-t", "pid", "-t", "tid", "-t", "procname"], True)
     if (ust):
         cmd_stub([LTTNG, "enable-channel", "u", "-u", "--subbuf-size", "4096", "--num-subbuf", "4096"], True)
         cmd_stub([LTTNG, "enable-event", "-c", "u", "-a", "-u"], True)
