@@ -1,0 +1,6 @@
+sched_process_exec
+sched_process_exit
+sched_process_fork
+sched_switch
+sched_wakeup
+sched_wakeup_new
