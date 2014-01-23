@@ -1,1 +1,6 @@
 Maintainer scripts, intended to be run to regenerate the traceset.
+
+Check for event loss:
+
+for i in $(ls -1d *-k); do javeltrace analyze -i ctf $i/kernel; done
+
