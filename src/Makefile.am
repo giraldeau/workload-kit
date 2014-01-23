@@ -1,6 +1,9 @@
 bin_PROGRAMS = wk-ioburst wk-deadlock wk-dthread wk-inception wk-srvhog \
                wk-clihog wk-lockfight wk-cpm1 wk-cpm2 wk-cpm3 wk-pipeline \
-               wk-mutex wk-imbalance wk-reparent wk-pipette
+               wk-mutex wk-imbalance wk-reparent wk-pipette wk-interference
+
+wk_interference_SOURCES = interference.c
+wk_interference_LDADD = libwk.a
 
 wk_ioburst_SOURCES = ioburst.c
 wk_ioburst_LDADD = libwk.a
@@ -43,4 +46,4 @@ wk_pipette_SOURCES = pipette.c
 wk_pipette_LDADD = libwk.a
 
 noinst_LIBRARIES = libwk.a
-libwk_a_SOURCES = calibrate.h calibrate.c utils.c utils.h
+libwk_a_SOURCES = calibrate.h calibrate.c spin.c spin.h utils.c utils.h
