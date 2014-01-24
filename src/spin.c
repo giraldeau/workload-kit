@@ -34,7 +34,6 @@ static void signalhandler (int signr) {
 void *worker(void *arg) {
 	int i = *((int*)arg);
 	while(1) {
-		printf("%d wait\n", i);
 		sem_wait(&sem_start[i]);
 		if(!cont) {
 			break;
@@ -43,7 +42,6 @@ void *worker(void *arg) {
 		while(run) {
 			x++;
 		}
-		printf("%d post\n", i);
 		sem_post(&sem_done[i]);
 	}
 	return NULL;
@@ -112,9 +110,6 @@ void spin_exit()
 
 void spin(long usec) {
     struct itimerval timer;
-    struct sigaction action;
-    sigset_t set;
-    unsigned long result = 0;
     int i;
 
 	if(!cont) {
@@ -124,20 +119,13 @@ void spin(long usec) {
     run = 1;
     __sync_synchronize();
 
-    action.sa_handler = signalhandler;
-    if (sigemptyset (&action.sa_mask)) {
-        error(EXIT_FAILURE, "sigemptyset failed");
-    }
-    action.sa_flags = 0;
     timer.it_interval.tv_sec = 0;
     timer.it_interval.tv_usec = usec;
     timer.it_value.tv_sec = 0;
     timer.it_value.tv_usec = usec;
 
     // define action
-    if (sigaction (SIGALRM, &action, NULL)) {
-        error(EXIT_FAILURE, "sigaction failed");
-    }
+    signal(SIGALRM, signalhandler);
 
     // start timer
     if (setitimer (ITIMER_REAL, &timer, NULL)) {
@@ -150,11 +138,4 @@ void spin(long usec) {
     for(i = 0; i < nr_thread; i++) {
     	sem_wait(&sem_done[i]);
     }
-    // stop timer
-    timer.it_interval.tv_usec = 0;
-    timer.it_value.tv_usec = 0;
-    if (setitimer (ITIMER_REAL, &timer, NULL)) {
-        error(EXIT_FAILURE, "setitimer stop failed");
-    }
 }
-
