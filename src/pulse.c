@@ -26,7 +26,7 @@
 #define DEFAULT_FREQ 4
 #define USEC_PER_SEC 1000000
 #define NSEC_PER_SEC 1000000000
-#define progname "wk-interference"
+#define progname "wk-pulse"
 
 struct experiment {
     int nr_thread;
