@@ -63,6 +63,10 @@ void spin_init(int n)
 	if (threads == NULL || sem_start == NULL || sem_done == NULL || ids == NULL)
 		goto err;
 	cont = 1;
+
+	// define action
+	signal(SIGALRM, signalhandler);
+
 	for(i = 0; i < nr_thread; i++) {
 		sem_init(&sem_start[i], 0, 0);
 		sem_init(&sem_done[i], 0, 0);
@@ -120,12 +124,9 @@ void spin(long usec) {
     __sync_synchronize();
 
     timer.it_interval.tv_sec = 0;
-    timer.it_interval.tv_usec = usec;
+    timer.it_interval.tv_usec = 0;
     timer.it_value.tv_sec = 0;
     timer.it_value.tv_usec = usec;
-
-    // define action
-    signal(SIGALRM, signalhandler);
 
     // start timer
     if (setitimer (ITIMER_REAL, &timer, NULL)) {

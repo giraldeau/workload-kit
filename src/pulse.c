@@ -18,6 +18,7 @@
 #include <inttypes.h>
 #include <pthread.h>
 #include <getopt.h>
+#include <sys/time.h>
 #include "spin.h"
 
 #define DEFAULT_SPIN 100000 // 100ms
@@ -103,19 +104,27 @@ int main(int argc, char **argv) {
 	int i, nr_iter;
 	struct experiment *exp = calloc(1, sizeof(struct experiment));
 	struct timespec ts;
+	struct timeval tv;
 	parse_opts(argc, argv, exp);
 
 	nr_iter = (exp->duration / USEC_PER_SEC) * exp->freq;
 	ts.tv_sec = 0;
+	/*
 	ts.tv_nsec = (NSEC_PER_SEC / exp->freq) - exp->spin * 1000;
-
+	*/
 	spin_init(exp->nr_thread);
 	for (i = 0; i < nr_iter; i++) {
+		// sync
+		gettimeofday(&tv, NULL);
+		long period = USEC_PER_SEC / exp->freq;
+		long sync = period - (tv.tv_usec % period);
+		printf("%ld %06ld period=%06ld sync=%06ld next=%06ld\n", tv.tv_sec, tv.tv_usec,
+				period, sync, tv.tv_usec + sync + period);
+		ts.tv_nsec = sync * 1000;
+		nanosleep(&ts, NULL);
 		printf("before_spin=%d\n", i);
 		spin(exp->spin);
 		printf("after_spin=%d\n", i);
-		nanosleep(&ts, NULL);
-		printf("after_sleep=%d\n", i);
 	}
 	spin_exit();
 	return 0;
