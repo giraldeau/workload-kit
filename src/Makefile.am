@@ -46,4 +46,4 @@ wk_pipette_SOURCES = pipette.c
 wk_pipette_LDADD = libwk.a
 
 noinst_LIBRARIES = libwk.a
-libwk_a_SOURCES = calibrate.h calibrate.c spin.c spin.h utils.c utils.h
+libwk_a_SOURCES = calibrate.h calibrate.c spin.c spin.h utils.c utils.h pincpu.c pincpu.h
