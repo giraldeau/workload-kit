@@ -17,10 +17,13 @@
 #include <sys/time.h>
 #include <semaphore.h>
 
+#include "pincpu.h"
+#include "spin.h"
+
 static volatile int run;
 static sem_t *sem_start;
 static sem_t *sem_done;
-static int *ids;
+static struct spin_args *args;
 static int nr_thread;
 static volatile int cont;
 static pthread_t *threads;
@@ -32,9 +35,11 @@ static void signalhandler (int signr) {
 }
 
 void *worker(void *arg) {
-	int i = *((int*)arg);
+	struct spin_args *args = arg;
+	if (args->spin->init)
+		args->spin->init(args);
 	while(1) {
-		sem_wait(&sem_start[i]);
+		sem_wait(&sem_start[args->id]);
 		if(!cont) {
 			break;
 		}
@@ -42,12 +47,14 @@ void *worker(void *arg) {
 		while(run) {
 			x++;
 		}
-		sem_post(&sem_done[i]);
+		sem_post(&sem_done[args->id]);
 	}
+	if (args->spin->done)
+		args->spin->done(args);
 	return NULL;
 }
 
-void spin_init(int n)
+void spin_init(struct spin *spin)
 {
 	int i;
 
@@ -55,12 +62,12 @@ void spin_init(int n)
 		return;
 	}
 
-	nr_thread = n;
-	threads = calloc(n, sizeof(pthread_t));
-	sem_start = calloc(n, sizeof(sem_t));
-	sem_done = calloc(n, sizeof(sem_t));
-	ids = calloc(n, sizeof(int));
-	if (threads == NULL || sem_start == NULL || sem_done == NULL || ids == NULL)
+	nr_thread = spin->n;
+	threads = calloc(spin->n, sizeof(pthread_t));
+	sem_start = calloc(spin->n, sizeof(sem_t));
+	sem_done = calloc(spin->n, sizeof(sem_t));
+	args = calloc(spin->n, sizeof(struct spin_args));
+	if (threads == NULL || sem_start == NULL || sem_done == NULL || args == NULL)
 		goto err;
 	cont = 1;
 
@@ -72,9 +79,10 @@ void spin_init(int n)
 		sem_init(&sem_done[i], 0, 0);
 	}
 
-	for (i = 0; i < n; i++) {
-		ids[i] = i;
-		pthread_create(&threads[i], NULL, worker, (void *)&ids[i]);
+	for (i = 0; i < spin->n; i++) {
+		args[i].id = i;
+		args[i].spin = spin;
+		pthread_create(&threads[i], NULL, worker, &args[i]);
 	}
 	return;
 
@@ -82,7 +90,7 @@ err:
 	free(threads);
 	free(sem_start);
 	free(sem_done);
-	free(ids);
+	free(args);
 	return;
 }
 
@@ -109,10 +117,10 @@ void spin_exit()
 	free(threads);
 	free(sem_start);
 	free(sem_done);
-	free(ids);
+	free(args);
 }
 
-void spin(long usec) {
+void spin_run(long usec) {
     struct itimerval timer;
     int i;
 

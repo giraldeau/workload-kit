@@ -8,6 +8,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <unistd.h>
+#include <sys/syscall.h>
 #include "utils.h"
 
 void throw(const char *msg)
@@ -32,4 +34,8 @@ int do_sleep(int mili) {
 	}
 	gettimeofday(&t2, NULL);
 	return 0;
+}
+
+int gettid() {
+    return (int) syscall(SYS_gettid);
 }
