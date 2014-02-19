@@ -10,6 +10,7 @@
 
 void throw(const char *msg);
 int do_sleep(int mili);
+int gettid();
 
 #define ARG_CHECK(cond, fmt ...)		\
 	do {								\

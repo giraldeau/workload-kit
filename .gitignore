@@ -45,6 +45,7 @@ src/wk-lockfight
 src/wk-mutex
 src/wk-pipeline
 src/wk-pipette
+src/wk-pulse
 src/wk-reparent
 src/wk-srvhog
 tests/test-uevent

@@ -1,0 +1,3 @@
+#!/bin/sh
+
+wk-pulse --cpu 0 --thread 2

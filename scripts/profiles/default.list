@@ -1,14 +1,10 @@
-hrtimer_cancel
-hrtimer_expire_entry
-hrtimer_expire_exit
-hrtimer_init
-hrtimer_start
 irq_handler_entry
 irq_handler_exit
 lttng_statedump_end
 lttng_statedump_file_descriptor
 lttng_statedump_process_state
 lttng_statedump_start
+sched_migrate_task
 sched_process_exec
 sched_process_exit
 sched_process_fork

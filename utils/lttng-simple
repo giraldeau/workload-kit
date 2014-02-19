@@ -84,7 +84,7 @@ def get_profiles(searchpath):
                     if not profiles.has_key(profile):
                         profiles[profile] = dirname
     return profiles
-    
+
 def do_trace(cmd, session, options, kernel, ust):
     if (not (kernel or ust)):
         return
@@ -122,7 +122,7 @@ def do_trace(cmd, session, options, kernel, ust):
         cmd_stub([LTTNG, "enable-channel", "k", "-k", "--subbuf-size", "16384", "--num-subbuf", "4096"], True)
         if (options.syscall):
             cmd_stub([LTTNG, "enable-event", "-c", "k", "-a", "-k", "--syscall"], True)
-        if (options.evlist is None):
+        if (options.evlist is None or options.enable_all_events):
             cmd_stub([LTTNG, "enable-event", "-c", "k", "-a", "-k"], True)
         else:
             evlist = load_event_list(options.evlist)
@@ -141,6 +141,10 @@ def do_trace(cmd, session, options, kernel, ust):
     # Step 3: start tracing
     cmd_stub([LTTNG, "start"], True)
     
+    if (options.daemon):
+        logging.info("daemon mode")
+        return
+
     # Step 4: run the program under tracing
     # Do not check the return value
     cmd_env = os.environ;
@@ -149,9 +153,10 @@ def do_trace(cmd, session, options, kernel, ust):
         cmd_env["LD_PRELOAD"] = "liblttng-ust-libc-wrapper.so"
 
     # surround cmd with sleep to get a better execution window
-    time.sleep(0.1)
-    logging.info("Executing command: " + " ".join(cmd))
-    cmd_stub(cmd, False, cmd_env)
+    if (cmd is not None):
+        time.sleep(0.1)
+        logging.info("Executing command: " + " ".join(cmd))
+        cmd_stub(cmd, False, cmd_env)
     time.sleep(0.1)
     
     # Step 5: tear down
@@ -170,6 +175,7 @@ if __name__=="__main__":
     parser.add_option("-u", "--ust", dest="ust", default=False, action="store_true", help="Trace only user space")
     parser.add_option("-o", "--output", dest="output", help="Output base directory for traces", metavar="DIR", default=destdir)
     parser.add_option("-b", "--batch", dest="batch", help="Run and trace all executables from this dir", metavar="DIR")
+    parser.add_option("-d", "--daemon", dest="daemon", default=False, action="store_true", help="Start tracing in background")
     parser.add_option("-l", "--log", dest="log", metavar="FILE", help="Log file", default=None)
     parser.add_option("-n", "--dry-run", dest="dry_run", default=False, action="store_true", help="Do not execute commands")
     parser.add_option("-e", "--enable-event-list", dest="evlist", default=default_evlist, help="White list of events to enable")
@@ -215,15 +221,18 @@ if __name__=="__main__":
 
     targets = []
     if (options.batch is None):
+        target = {"name": "default", "cmd": None}
         if (args is not None and type(args) is list and len(args) > 0):
-            target = {"name":os.path.basename(args[0]),
-                      "cmd":args}
-            # overide session name
-            if (options.name is not None):
-                target["name"] = options.name
-            targets.append(target)
+            target["name"] = os.path.basename(args[0])
+            target["cmd"] = args
+        # overide session name
+        if (options.name is not None):
+            target["name"] = options.name
+        targets.append(target)
     else:
         # Add all scripts from the directory
+        if (options.daemon):
+            raise RuntimeError("The batch mode is incompatible with daemon mode")
         for exe in os.listdir(options.batch):
             file = join(options.batch, exe)
             if (os.path.isfile(file)):
