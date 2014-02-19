@@ -31,7 +31,8 @@ clear_trace = False
 current = ""
 
 default_evlist = "default"
-evlist_search_path = [ os.path.join(os.getenv("HOME"), ".workload-kit/"),
+evlist_search_path = [ os.getenv("PWD")
+                       os.path.join(os.getenv("HOME"), ".workload-kit/"),
                        os.path.join(os.getenv("WK_PROFILE_DIR")),
                        "/usr/local/share/workload-kit/scripts/profiles/",
                        "/usr/share/workload-kit/scripts/profiles/" ]
@@ -61,7 +62,9 @@ def find_event_file(searchpath, name):
 
 def load_event_list(name):
     evs = []
-    evfile = find_event_file(evlist_search_path, name + ".list")
+    evfile = name
+    if (!os.path.exists(name)):
+        evfile = find_event_file(evlist_search_path, name + ".list")
     if (evfile is None):
         logging.warning("event list " + name + " not found")
         return evs
