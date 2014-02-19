@@ -122,7 +122,7 @@ def do_trace(cmd, session, options, kernel, ust):
         cmd_stub([LTTNG, "enable-channel", "k", "-k", "--subbuf-size", "16384", "--num-subbuf", "4096"], True)
         if (options.syscall):
             cmd_stub([LTTNG, "enable-event", "-c", "k", "-a", "-k", "--syscall"], True)
-        if (options.evlist is None):
+        if (options.evlist is None or options.enable_all_events):
             cmd_stub([LTTNG, "enable-event", "-c", "k", "-a", "-k"], True)
         else:
             evlist = load_event_list(options.evlist)
