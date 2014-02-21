@@ -1,6 +1,8 @@
 bin_PROGRAMS = wk-ioburst wk-deadlock wk-dthread wk-inception wk-srvhog \
                wk-clihog wk-lockfight wk-cpm1 wk-cpm2 wk-cpm3 wk-pipeline \
-               wk-mutex wk-imbalance wk-reparent wk-pipette wk-pulse
+               wk-mutex wk-imbalance wk-reparent wk-pipette wk-pulse wk-schedfreq
+
+wk_schedfreq_SOURCES = schedfreq.c
 
 wk_pulse_SOURCES = pulse.c
 wk_pulse_LDADD = libwk.a
