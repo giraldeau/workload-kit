@@ -1,8 +1,5 @@
-hrtimer_cancel
 hrtimer_expire_entry
 hrtimer_expire_exit
-hrtimer_init
-hrtimer_start
 inet_accept
 inet_connect
 inet_sock_clone
@@ -23,5 +20,6 @@ sched_process_fork
 sched_switch
 sched_wakeup
 sched_wakeup_new
+sched_ttwu
 softirq_entry
 softirq_exit
