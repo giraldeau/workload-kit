@@ -68,7 +68,7 @@ static void parse_opts(int argc, char **argv, struct experiment *exp) {
             { "help",       0, 0, 'h' },
             { "duration",   1, 0, 'd' },
             { "thread",     1, 0, 't' },
-            { "freq",       1, 0, 'f' },
+            { "frequency",  1, 0, 'f' },
             { "spin",       1, 0, 's' },
             { "cpuset",     1, 0, 'c' },
             { "verbose",    0, 0, 'v' },
