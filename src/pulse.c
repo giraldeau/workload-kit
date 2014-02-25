@@ -47,7 +47,7 @@ struct experiment {
 
 __attribute__((noreturn))
 static void usage(void) {
-    fprintf(stderr, "Usage: %s [OPTIONS] [COMMAND]\n", progname);
+    fprintf(stderr, "Usage: %s [OPTIONS]\n", progname);
     fprintf(stderr, "\nOptions:\n\n");
     fprintf(stderr, "--spin S         spin duration in microseconds (default = 100 000 us)\n");
     fprintf(stderr, "--thread N       number of threads to be spawned (default = 2)\n");
