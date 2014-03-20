@@ -1,4 +1,4 @@
-AC_INIT([workload-kit], 0.1.17)
+AC_INIT([workload-kit], 0.1.18)
 AC_CONFIG_AUX_DIR([config])
 AM_INIT_AUTOMAKE([foreign dist-bzip2])
 AC_CONFIG_MACRO_DIR([config])
@@ -21,7 +21,7 @@ AC_ARG_ENABLE([ust],
   [ust_support=$enableval], [ust_support=yes])
 
 AS_IF([test "x$ust_support" == "xyes"], [
-  PKG_CHECK_MODULES([UST], [lttng-ust], [],
+  PKG_CHECK_MODULES([UST], [lttng-ust,liburcu-bp], [],
 	[AC_MSG_ERROR([Cannot find lttng ust library with pkg-config])])
 ])
 
