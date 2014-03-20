@@ -47,7 +47,7 @@ struct experiment {
 
 __attribute__((noreturn))
 static void usage(void) {
-    fprintf(stderr, "Usage: %s [OPTIONS] [COMMAND]\n", progname);
+    fprintf(stderr, "Usage: %s [OPTIONS]\n", progname);
     fprintf(stderr, "\nOptions:\n\n");
     fprintf(stderr, "--spin S         spin duration in microseconds (default = 100 000 us)\n");
     fprintf(stderr, "--thread N       number of threads to be spawned (default = 2)\n");
@@ -68,7 +68,7 @@ static void parse_opts(int argc, char **argv, struct experiment *exp) {
             { "help",       0, 0, 'h' },
             { "duration",   1, 0, 'd' },
             { "thread",     1, 0, 't' },
-            { "freq",       1, 0, 'f' },
+            { "frequency",  1, 0, 'f' },
             { "spin",       1, 0, 's' },
             { "cpuset",     1, 0, 'c' },
             { "verbose",    0, 0, 'v' },
