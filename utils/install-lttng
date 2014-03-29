@@ -1,0 +1,49 @@
+#!/bin/sh
+# Automatic installation of LTTng
+
+# run this script as root
+if [ $(id -u) -ne 0 ]; then
+	echo "run this script as root"
+	exit 1
+fi
+
+# make sure add-apt-repository is installed
+apt-get update -qq
+apt-get install -y software-properties-common
+
+# ppa setup
+add-apt-repository -y ppa:lttng/ppa
+add-apt-repository -y ppa:francis-giraldeau/ppa
+apt-get update -qq
+
+# install tools
+apt-get install -y make gcc unzip wget
+apt-get install -y lttng-tools babeltrace workload-kit
+
+# install addons modules
+# this is clunky, we should have lttng-modules-addons-dkms
+test -f addons.zip && rm -rf addons.zip
+test -d lttng-modules-addons && rm -rf lttng-modules-addons
+wget https://github.com/giraldeau/lttng-modules/archive/addons.zip
+unzip -uo addons.zip
+cd lttng-modules-addons/
+make -j4
+make modules_install
+mkdir -p /usr/local/bin/
+install control-addons.sh /usr/local/bin/
+cd ..
+
+# override modules installed in other locations
+echo "search extra updates ubuntu built-in" > /etc/depmod.d/ubuntu.conf
+depmod -a
+
+# restart services to load new modules
+control-addons.sh unload
+service lttng-sessiond restart
+control-addons.sh load
+dmesg | tail
+lsmod | grep lttng_addons
+lttng list -k | grep sched_ttwu
+echo "end of script"
+echo "rerun the script in case the kernel is updated"
+
