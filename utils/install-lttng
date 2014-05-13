@@ -38,10 +38,12 @@ cd ..
 # override modules installed in other locations
 echo "search extra updates ubuntu built-in" > /etc/depmod.d/ubuntu.conf
 depmod -a
-MODLIST="lttng-modsign $(ls -1 /lib/modules/$(uname -r)/extra/addons | cut -d. -f1)"
-for module in $MODLIST; do
-	echo "clear /files/etc/modules/$module" | augtool -e -s
-done
+
+# do not load all modules, use control-addons.sh
+#MODLIST="lttng-modsign $(ls -1 /lib/modules/$(uname -r)/extra/addons | cut -d. -f1)"
+#for module in $MODLIST; do
+#	echo "clear /files/etc/modules/$module" | augtool -e -s
+#done
 
 echo "end of script"
 echo "rerun the script in case the kernel is updated"
