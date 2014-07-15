@@ -29,7 +29,7 @@ void *worker(void *arg) {
 		f = fopen(LTTNG_FILE, "w");
 	}
 	for (i = 0; i < NB_EV; i++) {
-		ret = fprintf(f, "%s " PRId64 " %" PRId64, MSG, self, i);
+		ret = fprintf(f, "%s %" PRId64 " %" PRId64, MSG, self, i);
 		if (ret < 0)
 			miss++;
 		fflush(f);
