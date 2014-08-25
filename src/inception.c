@@ -21,8 +21,8 @@ int children = 0;
 
 void usage(char *prog) {
 	printf("Usage: %s TIME CHILDREN\n\n", prog);
-	printf("    TIME     : sleep time in miliseconds\n", prog);
-	printf("    CHILDREN : number of children to spawn\n", prog);
+	printf("    TIME     : sleep time in miliseconds\n");
+	printf("    CHILDREN : number of children to spawn\n");
 }
 
 int do_run() {
