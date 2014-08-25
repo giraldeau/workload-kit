@@ -1,10 +1,5 @@
 hrtimer_expire_entry
 hrtimer_expire_exit
-inet_accept
-inet_connect
-inet_sock_clone
-inet_sock_create
-inet_sock_delete
 inet_sock_local_in
 inet_sock_local_out
 irq_handler_entry
@@ -18,8 +13,6 @@ sched_process_exec
 sched_process_exit
 sched_process_fork
 sched_switch
-sched_wakeup
-sched_wakeup_new
 sched_ttwu
 softirq_entry
 softirq_exit
