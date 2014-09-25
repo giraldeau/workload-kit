@@ -43,6 +43,7 @@ int main(int argc, char **argv) {
 
 	/* Get name of processor for debug purpose */
 	MPI_Get_processor_name(processor_name, &namelen);
+	printf("Process %d on host %s\n", rank, processor_name);
 	if (rank == server) {
 		srand(time(NULL));
 		int max = calibrate(MIN_TASK);
