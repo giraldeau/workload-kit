@@ -12,6 +12,8 @@ AC_CHECK_HEADERS([ \
 ])
 
 AC_CHECK_LIB(pthread, pthread_create)
+AC_OPENMP
+CS_AC_TEST_MPI
 
 PKG_PROG_PKG_CONFIG
 
@@ -46,11 +48,12 @@ AM_CONDITIONAL([HAVE_CPUTEMP], [test "x$cputemp_support" == "xyes"])
 AC_OPENMP
 
 # be silent by default
-AM_SILENT_RULES([yes])
+AM_SILENT_RULES([no])
 
 AC_PROG_LIBTOOL
 AC_PROG_CC
 AM_PROG_CC_C_O
+AC_PROG_CC(mpicc)
 AC_CONFIG_FILES([Makefile
     utils/Makefile
     src/Makefile
@@ -58,6 +61,7 @@ AC_CONFIG_FILES([Makefile
     ust/Makefile
     tests/Makefile
     doc/man/Makefile
+    cluster/Makefile
 ])
 
 AS_IF([test "x$ust_support" == "xyes"],
@@ -68,6 +72,7 @@ AS_IF([test "x$ust_support" == "xyes"],
     ust/heartbeat/Makefile
     ust/hello-openmp/Makefile
     ust/threadtree/Makefile
+    cluster/mpi-imbalance/Makefile
 ])])
 
 AS_IF([test "x$ust_support" == "xyes" -a "x$cputemp_support" == "xyes"],

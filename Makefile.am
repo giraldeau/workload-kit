@@ -17,7 +17,7 @@ script_dir_p := scripts/profiles
 files_p := $(foreach script,$(script_dir_p),$(wildcard $(script)/*))
 script_dest_p := $(DESTDIR)$(pkgdatadir)/$(script_dir_p)
 
-SUBDIRS = src utils $(USTDIR) tests
+SUBDIRS = src utils $(USTDIR) tests cluster
 EXTRA_DIST = $(script_dir_u) $(script_dir_k) $(script_dir_p) doc utils
 
 install-data-local:

@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python2
 # given a command, trace the application with ust, kernel or both
 # kernel tracing is enabled only if the user has appropriate rights
 # the basename of the command will be used as the directory if none is provided
@@ -138,7 +138,7 @@ def do_trace(cmd, session, options, kernel, ust):
     if (ust):
         cmd_stub([LTTNG, "enable-channel", "u", "-u", "--subbuf-size", "4096", "--num-subbuf", "4096"], True)
         cmd_stub([LTTNG, "enable-event", "-c", "u", "-a", "-u"], True)
-        if not kernel or add_context:
+        if not kernel or add_context or options.stateless:
             cmd_stub([LTTNG, "add-context", "-c", "u", "-u", "-t", "vpid", "-t", "vtid"], True)
     
     # Step 3: start tracing
