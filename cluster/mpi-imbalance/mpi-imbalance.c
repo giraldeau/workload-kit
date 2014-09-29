@@ -46,13 +46,12 @@ int main(int argc, char **argv) {
 	printf("Process %d on host %s\n", rank, processor_name);
 	if (rank == server) {
 		srand(time(NULL));
-		int max = calibrate(MIN_TASK);
 		for (i = 0; i < CYCLES; i++) {
 			tracepoint(mpi_imbalance, server_start_cycle, i, numprocs);
 			/* For each cycle, dispatch a workload to all worker processes */
 			for (j = 1; j < numprocs; j++) {
 				num = rand() % numprocs;
-				num = (num + 1) * max;
+				num = num + 1;
 				MPI_Send(&num, 1, MPI_INTEGER, j, 1, MPI_COMM_WORLD);
 			}
 
@@ -67,6 +66,8 @@ int main(int argc, char **argv) {
 		}
 
 	} else {
+		/* Calibrate the worker so the calibration is done on the running machine */
+		int max = calibrate(MIN_TASK);
 		/* Receive workload from server */
 		MPI_Recv(&num, 1, MPI_INTEGER, server, 1, MPI_COMM_WORLD, &status);
 		tracepoint(mpi_imbalance, worker_receive, rank, num);
@@ -74,7 +75,7 @@ int main(int argc, char **argv) {
 		/* While the server does not request termination, do the work */
 		while (num != TERMINATION) {
 			tracepoint(mpi_imbalance, worker_start_work, rank);
-			do_hog(num);
+			do_hog(num * max);
 
 			tracepoint(mpi_imbalance, worker_wait, rank);
 			MPI_Barrier(MPI_COMM_WORLD);
