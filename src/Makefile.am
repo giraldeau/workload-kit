@@ -1,5 +1,5 @@
-bin_PROGRAMS = wk-ioburst wk-deadlock wk-dthread wk-inception wk-srvhog \
-               wk-clihog wk-lockfight wk-cpm1 wk-cpm2 wk-cpm3 wk-pipeline \
+bin_PROGRAMS = wk-ioburst wk-deadlock wk-dthread wk-inception wk-rpc-client \
+               wk-rpc-server wk-lockfight wk-cpm1 wk-cpm2 wk-cpm3 wk-pipeline \
                wk-mutex wk-imbalance wk-reparent wk-pipette wk-pulse wk-schedfreq
 
 wk_schedfreq_SOURCES = schedfreq.c
@@ -17,11 +17,11 @@ wk_dthread_SOURCES = dthread.c
 wk_inception_SOURCES = inception.c
 wk_inception_LDADD = libwk.a
 
-wk_srvhog_SOURCES = srvhog.c
-wk_srvhog_LDADD = libwk.a
+wk_rpc_client_SOURCES = rpc-client.c
+wk_rpc_client_LDADD = libwk.a
 
-wk_clihog_SOURCES = clihog.c
-wk_clihog_LDADD = libwk.a
+wk_rpc_server_SOURCES = rpc-server.c
+wk_rpc_server_LDADD = libwk.a
 
 wk_lockfight_SOURCES = lockfight.c
 wk_lockfight_LDADD = libwk.a

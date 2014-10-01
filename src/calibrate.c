@@ -41,6 +41,7 @@ static unsigned long counter (unsigned long niters) {
     run = 1;
     while (run && --niters)
         ;
+    printf("count=%lu\n", ULONG_MAX - niters);
     return niters;
 }
 
