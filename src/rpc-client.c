@@ -22,7 +22,7 @@ struct opts {
 	int async;
 	int delay;
 	int cmd;
-	int count;
+	unsigned long count;
 	char *server;
 	int port;
 };
@@ -168,18 +168,16 @@ int rpc_calibrate() {
 	asprintf(&path, "%s/%s", getenv("HOME"), ".wk-calibrate");
 	printf("path=%s\n", path);
 	stat(path, &info);
-	FILE *f = fopen(path, "w+");
-	if (f == NULL) {
-		perror("fopen() failed");
-		return count;
-	}
 	if (S_ISREG(info.st_mode)) {
+		FILE *f = fopen(path, "r");
 		ret = fread(&count, sizeof(count), 1, f);
+		fclose(f);
 	} else {
 		count = calibrate(10000) / 10;
+		FILE *f = fopen(path, "w");
 		ret = fwrite(&count, sizeof(count), 1, f);
+		fclose(f);
 	}
-	fclose(f);
 	return count;
 }
 
@@ -192,6 +190,7 @@ int main(int argc, char *argv[]) {
 
 	parse_opts(argc, argv, &opts);
 	opts.count = rpc_calibrate();
+	printf("count=%ld\n", opts.count);
 	ret = rpc_connect(&opts, &cx);
 	if (ret < 0)
 		return -1;
