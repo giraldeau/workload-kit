@@ -17,10 +17,10 @@ wk_dthread_SOURCES = dthread.c
 wk_inception_SOURCES = inception.c
 wk_inception_LDADD = libwk.a
 
-wk_rpc_client_SOURCES = rpc-client.c
+wk_rpc_client_SOURCES = rpc-client.c rpc.h
 wk_rpc_client_LDADD = libwk.a
 
-wk_rpc_server_SOURCES = rpc-server.c
+wk_rpc_server_SOURCES = rpc-server.c rpc.h
 wk_rpc_server_LDADD = libwk.a
 
 wk_lockfight_SOURCES = lockfight.c
