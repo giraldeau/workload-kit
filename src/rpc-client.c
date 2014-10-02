@@ -3,6 +3,8 @@
 #include <unistd.h>
 #include <string.h>
 #include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
@@ -78,7 +80,6 @@ static void parse_opts(int argc, char **argv, struct opts *opts) {
 			}
 			break;
 		case 'a':
-			opts->count = calibrate(10000) / 10;
 			opts->async = atoi(optarg);
 			break;
 		case 'd':
@@ -158,6 +159,30 @@ int rpc_terminate(struct cx *cx) {
 	return 0;
 }
 
+int rpc_calibrate() {
+	int ret;
+	struct stat info;
+	char *path;
+	unsigned long count = 0;
+
+	asprintf(&path, "%s/%s", getenv("HOME"), ".wk-calibrate");
+	printf("path=%s\n", path);
+	stat(path, &info);
+	FILE *f = fopen(path, "w+");
+	if (f == NULL) {
+		perror("fopen() failed");
+		return count;
+	}
+	if (S_ISREG(info.st_mode)) {
+		ret = fread(&count, sizeof(count), 1, f);
+	} else {
+		count = calibrate(10000) / 10;
+		ret = fwrite(&count, sizeof(count), 1, f);
+	}
+	fclose(f);
+	return count;
+}
+
 int main(int argc, char *argv[]) {
 	struct opts opts;
 	struct cx cx;
@@ -166,6 +191,7 @@ int main(int argc, char *argv[]) {
 	int ret;
 
 	parse_opts(argc, argv, &opts);
+	opts.count = rpc_calibrate();
 	ret = rpc_connect(&opts, &cx);
 	if (ret < 0)
 		return -1;
@@ -176,43 +202,4 @@ int main(int argc, char *argv[]) {
 	rpc_command(&opts, &cx, &msg, &ans);
 	rpc_terminate(&cx);
 	return 0;
-
-	/*
-	char buffer[256];
-	if (argc < 4) {
-		fprintf(stderr,"usage %s hostname port\n", argv[0]);
-		exit(0);
-	}
-	portno = atoi(argv[2]);
-	sockfd = socket(AF_INET, SOCK_STREAM, 0);
-	if (sockfd < 0)
-		throw("ERROR opening socket");
-	server = gethostbyname(argv[1]);
-	if (server == NULL) {
-		fprintf(stderr,"ERROR, no such host\n");
-		exit(0);
-	}
-	bzero((char *) &serv_addr, sizeof(serv_addr));
-	serv_addr.sin_family = AF_INET;
-	bcopy((char *)server->h_addr,
-			(char *)&serv_addr.sin_addr.s_addr,
-			server->h_length);
-	serv_addr.sin_port = htons(portno);
-	if (connect(sockfd,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0)
-		throw("ERROR connecting");
-	//printf("Please enter the message: ");
-	//bzero(buffer,256);
-	//fgets(buffer,255,stdin);
-	printf("client send cmd %s\n", argv[3]);
-	n = write(sockfd,argv[3],strlen(argv[3]));
-	if (n < 0)
-		throw("ERROR writing to socket");
-	bzero(buffer,256);
-	n = read(sockfd,buffer,255);
-	if (n < 0)
-		throw("ERROR reading from socket");
-	printf("client recv result %s\n", buffer);
-	close(sockfd);
-	return 0;
-	*/
 }
