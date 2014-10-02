@@ -20,6 +20,7 @@ struct opts {
 	int async;
 	int delay;
 	int cmd;
+	int count;
 	char *server;
 	int port;
 };
@@ -77,6 +78,7 @@ static void parse_opts(int argc, char **argv, struct opts *opts) {
 			}
 			break;
 		case 'a':
+			opts->count = calibrate(10000) / 10;
 			opts->async = atoi(optarg);
 			break;
 		case 'd':
@@ -138,6 +140,9 @@ int rpc_command(struct opts *opts, struct cx *cx, struct message *msg, struct me
 	if (ret < 0) {
 		printf("write() failed\n");
 		return ret;
+	}
+	if (opts->async) {
+		do_hog(opts->async * opts->count);
 	}
 	ret = read(cx->sockfd, ans, sizeof(struct message));
 	if (ret < 0) {
