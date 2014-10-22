@@ -129,7 +129,8 @@ def do_trace(cmd, session, options, kernel, ust):
             add_context = True
             cmd_stub([LTTNG, "add-context", "-k", "-c", "k", "-t", "pid", "-t", "tid", "-t", "procname"], True)
         if (options.syscall):
-            cmd_stub([LTTNG, "enable-event", "-c", "k", "-a", "-k", "--syscall"], True)
+            # do not check the return code, see http://bugs.lttng.org/issues/847
+            cmd_stub([LTTNG, "enable-event", "-c", "k", "-a", "-k", "--syscall"], False)
         if (options.evlist is None or options.enable_all_events):
             cmd_stub([LTTNG, "enable-event", "-c", "k", "-a", "-k"], True)
         else:
