@@ -9,6 +9,7 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include <getopt.h>
+#include <poll.h>
 #include "utils.h"
 #include "rpc.h"
 
@@ -25,6 +26,7 @@ struct opts {
 	unsigned long count;
 	char *server;
 	int port;
+	int poll;
 };
 
 struct cx {
@@ -60,6 +62,7 @@ static void parse_opts(int argc, char **argv, struct opts *opts) {
 		{ "async",      1, 0, 'a' },
 		{ "delay",      1, 0, 'd' },
 		{ "command",    1, 0, 'c' },
+		{ "poll",       1, 0, 'x' },
 		{ "verbose",    0, 0, 'v' },
 		{ 0, 0, 0, 0 }
 	};
@@ -68,9 +71,10 @@ static void parse_opts(int argc, char **argv, struct opts *opts) {
 	opts->delay = DEFAULT_DELAY;
 	opts->async = DEFAULT_ASYNC;
 	opts->port = DEFAULT_PORT;
+	opts->poll = 0;
 	opts->server = NULL;
 
-	while ((opt = getopt_long(argc, argv, "hva:d:c:s:p:", options, &idx)) != -1) {
+	while ((opt = getopt_long(argc, argv, "hva:d:c:s:p:x:", options, &idx)) != -1) {
 		switch (opt) {
 		case 'c':
 			if (strcmp(optarg, "hog") == 0) {
@@ -90,6 +94,9 @@ static void parse_opts(int argc, char **argv, struct opts *opts) {
 			break;
 		case 'p':
 			opts->port = atoi(optarg);
+			break;
+		case 'x':
+			opts->poll = atoi(optarg);
 			break;
 		case 'h':
 			usage();
@@ -137,6 +144,7 @@ int rpc_connect(struct opts *opts, struct cx *cx) {
 
 int rpc_command(struct opts *opts, struct cx *cx, struct message *msg, struct message *ans) {
 	int ret;
+	struct pollfd fds;
 	ret = write(cx->sockfd, msg, sizeof(struct message));
 	if (ret < 0) {
 		printf("write() failed\n");
@@ -144,6 +152,13 @@ int rpc_command(struct opts *opts, struct cx *cx, struct message *msg, struct me
 	}
 	if (opts->async) {
 		do_hog(opts->async * opts->count);
+	}
+	if (opts->poll) {
+		fds.fd = cx->sockfd;
+		fds.events = POLLIN;
+		do {
+			ret = poll(&fds, 1, opts->poll);
+		} while(ret == 0);
 	}
 	ret = read(cx->sockfd, ans, sizeof(struct message));
 	if (ret < 0) {
