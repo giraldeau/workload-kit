@@ -11,11 +11,13 @@
 enum commands {
 	RPC_HOG,
 	RPC_SLEEP,
+	RPC_PING,
 };
 
 struct message {
 	int cmd;
 	int arg;
+	int cnt;
 	int ret;
 };
 

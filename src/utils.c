@@ -10,6 +10,7 @@
 #include <time.h>
 #include <unistd.h>
 #include <sys/syscall.h>
+#include <time.h>
 #include "utils.h"
 
 void throw(const char *msg)
@@ -38,4 +39,19 @@ int do_sleep(int mili) {
 
 int gettid() {
     return (int) syscall(SYS_gettid);
+}
+
+/*
+ * computes time difference (x - y)
+ */
+struct timespec time_sub(struct timespec *x, struct timespec *y)
+{
+    struct timespec res;
+    res.tv_sec  = x->tv_sec  - y->tv_sec;
+    res.tv_nsec = x->tv_nsec - y->tv_nsec;
+    if(x->tv_nsec < y->tv_nsec) {
+        res.tv_sec--;
+        res.tv_nsec += 1000000000;
+    }
+    return res;
 }

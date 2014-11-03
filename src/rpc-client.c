@@ -10,6 +10,7 @@
 #include <netdb.h>
 #include <getopt.h>
 #include <poll.h>
+#include <time.h>
 #include "utils.h"
 #include "rpc.h"
 
@@ -27,6 +28,8 @@ struct opts {
 	char *server;
 	int port;
 	int poll;
+	int repeat;
+	int verbose;
 };
 
 struct cx {
@@ -63,6 +66,7 @@ static void parse_opts(int argc, char **argv, struct opts *opts) {
 		{ "delay",      1, 0, 'd' },
 		{ "command",    1, 0, 'c' },
 		{ "poll",       1, 0, 'x' },
+		{ "repeat",     1, 0, 'r' },
 		{ "verbose",    0, 0, 'v' },
 		{ 0, 0, 0, 0 }
 	};
@@ -72,6 +76,8 @@ static void parse_opts(int argc, char **argv, struct opts *opts) {
 	opts->async = DEFAULT_ASYNC;
 	opts->port = DEFAULT_PORT;
 	opts->poll = 0;
+	opts->verbose = 0;
+	opts->repeat = 1;
 	opts->server = NULL;
 
 	while ((opt = getopt_long(argc, argv, "hva:d:c:s:p:x:", options, &idx)) != -1) {
@@ -81,6 +87,8 @@ static void parse_opts(int argc, char **argv, struct opts *opts) {
 				opts->cmd = RPC_HOG;
 			} else if (strcmp(optarg, "sleep") == 0) {
 				opts->cmd = RPC_SLEEP;
+			} else if (strcmp(optarg, "ping") == 0) {
+				opts->cmd = RPC_PING;
 			}
 			break;
 		case 'a':
@@ -98,8 +106,14 @@ static void parse_opts(int argc, char **argv, struct opts *opts) {
 		case 'x':
 			opts->poll = atoi(optarg);
 			break;
+		case 'r':
+			opts->repeat = atoi(optarg);
+			break;
 		case 'h':
 			usage();
+			break;
+		case 'v':
+			opts->verbose = 1;
 			break;
 		default:
 			usage();
@@ -165,7 +179,9 @@ int rpc_command(struct opts *opts, struct cx *cx, struct message *msg, struct me
 		printf("read() failed\n");
 		return ret;
 	}
-	printf("status: %d\n", ans->ret);
+	if (opts->verbose) {
+		printf("status: %d\n", ans->ret);
+	}
 	return ret;
 }
 
@@ -196,11 +212,36 @@ int rpc_calibrate() {
 	return count;
 }
 
+int rpc_experiment(struct opts *opts, struct cx *cx) {
+	struct message msg, ans;
+	struct timespec *data;
+	int i;
+
+	/* allocate memory ahead and writes to it to avoid page fault */
+	data = malloc(opts->repeat * sizeof(struct timespec));
+	memset(data, 0, opts->repeat * sizeof(struct timespec));
+
+	for (i = 0; i < opts->repeat; i++) {
+		clock_gettime(CLOCK_MONOTONIC, &data[i]);
+		msg.cmd = opts->cmd;
+		msg.arg = opts->delay;
+		msg.cnt = opts->repeat - i;
+		msg.ret = 0;
+		memset(&ans, 0, sizeof(struct message));
+		rpc_command(opts, cx, &msg, &ans);
+	}
+
+	FILE *out = fopen("rpc-stats.out", "w+");
+	for (i = 0; i < opts->repeat - 1; i++) {
+		struct timespec ts = time_sub(&data[i + 1], &data[i]);
+		fprintf(out, "%d,%ld.%09ld\n", i, ts.tv_sec, ts.tv_nsec);
+	}
+	fclose(out);
+}
+
 int main(int argc, char *argv[]) {
 	struct opts opts;
 	struct cx cx;
-	struct message msg;
-	struct message ans;
 	int ret;
 
 	parse_opts(argc, argv, &opts);
@@ -209,11 +250,7 @@ int main(int argc, char *argv[]) {
 	ret = rpc_connect(&opts, &cx);
 	if (ret < 0)
 		return -1;
-	msg.cmd = opts.cmd;
-	msg.arg = opts.delay;
-	msg.ret = 0;
-	memset(&ans, 0, sizeof(struct message));
-	rpc_command(&opts, &cx, &msg, &ans);
+	rpc_experiment(&opts, &cx);
 	rpc_terminate(&cx);
 	return 0;
 }

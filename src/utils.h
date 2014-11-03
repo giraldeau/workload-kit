@@ -11,6 +11,7 @@
 void throw(const char *msg);
 int do_sleep(int mili);
 int gettid();
+struct timespec time_sub(struct timespec *x, struct timespec *y);
 
 #define ARG_CHECK(cond, fmt ...)		\
 	do {								\

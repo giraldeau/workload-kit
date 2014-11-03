@@ -60,26 +60,29 @@ int main(int argc, char *argv[])
 		newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
 		if (newsockfd < 0)
 			throw("ERROR on accept");
-
-		memset(&msg, 0, sizeof(msg));
-		ret = read(newsockfd, &msg, sizeof(msg));
-		if (ret < 0)
-			throw("ERROR reading from socket");
-		printf("server recv cmd: %d arg: %d\n", msg.cmd, msg.arg);
-		switch (msg.cmd) {
-		case RPC_HOG:
-			do_hog(msg.arg * count);
-			break;
-		case RPC_SLEEP:
-			do_sleep(msg.arg);
-			break;
-		default:
-			break;
-		}
-		msg.ret = 42;
-		ret = write(newsockfd, &msg, sizeof(msg));
-		if (ret < 0)
-			throw("ERROR writing to socket");
+		do {
+			memset(&msg, 0, sizeof(msg));
+			ret = read(newsockfd, &msg, sizeof(msg));
+			if (ret < 0)
+				throw("ERROR reading from socket");
+			//printf("server recv cmd: %d arg: %d\n", msg.cmd, msg.arg);
+			switch (msg.cmd) {
+			case RPC_HOG:
+				do_hog(msg.arg * count);
+				break;
+			case RPC_SLEEP:
+				do_sleep(msg.arg);
+				break;
+			case RPC_PING:
+				// do nothing
+			default:
+				break;
+			}
+			msg.ret = 42;
+			ret = write(newsockfd, &msg, sizeof(msg));
+			if (ret < 0)
+				throw("ERROR writing to socket");
+		} while(msg.cnt > 0);
 		close(newsockfd);
 	}
 	close(sockfd);
