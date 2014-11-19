@@ -35,22 +35,59 @@
 		<definedValue name="CSTATE_13" value="3200000" color="#c00000" />
 		<definedValue name="CSTATE_14" value="3401000" color="#a00000" />
 
+		<definedValue name="CPU_IDLE" value="0" color="#ccf4cc" />
+		<definedValue name="CPU_BUSY" value="1" color="#006600" />
+
 		<entry path="CPU/*">
 			<display type="self" />
+			<entry path="freq">
+				<display type="self" />
+			</entry>
+			<entry path="sched">
+				<display type="self" />
+			</entry>
 		</entry>
 	</timeGraphView>
 
-	<stateProvider id="cpufreq.sp" version="3">
+	<stateProvider id="cpufreq.sp" version="4">
 		<head>
 			<traceType id="org.eclipse.linuxtools.lttng2.kernel.tracetype" />
 			<label value="CPU Frequency" />
 		</head>
+
+		<definedValue name="CPU_IDLE" value="0" />
+		<definedValue name="CPU_BUSY" value="1" />
+
 		<eventHandler eventName="power_cpu_frequency">
 			<stateChange>
 				<stateAttribute type="constant" value="CPU" />
 				<stateAttribute type="eventField" value="cpu" />
+				<stateAttribute type="constant" value="freq" />
 				<stateValue type="eventField" value="state" forcedType="int" />
 			</stateChange>
+		</eventHandler>
+
+		<eventHandler eventName="sched_switch">
+		    <stateChange>
+		        <if>
+		            <condition>
+		                <field name="next_tid" />
+		                <stateValue type="long" value="0" />
+		            </condition>
+		        </if>
+		        <then>
+		            <stateAttribute type="constant" value="CPU" />
+			<stateAttribute type="eventField" value="cpu" />
+				<stateAttribute type="constant" value="sched" />
+		            <stateValue type="int" value="$CPU_IDLE" />
+		        </then>
+		        <else>
+		            <stateAttribute type="constant" value="CPU" />
+			<stateAttribute type="eventField" value="cpu" />
+				<stateAttribute type="constant" value="sched" />
+		            <stateValue type="int" value="$CPU_BUSY" />
+		        </else>
+		    </stateChange>
 		</eventHandler>
 
 	</stateProvider>
