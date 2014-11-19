@@ -40,7 +40,7 @@
 		</entry>
 	</timeGraphView>
 
-	<stateProvider id="cpufreq.sp" version="1">
+	<stateProvider id="cpufreq.sp" version="2">
 		<head>
 			<traceType id="org.eclipse.linuxtools.lttng2.kernel.tracetype" />
 			<label value="CPU Frequency" />
@@ -49,7 +49,7 @@
 			<stateChange>
 				<stateAttribute type="constant" value="CPU" />
 				<stateAttribute type="eventField" value="cpu" />
-				<stateValue type="eventField" value="state" />
+				<stateValue type="eventField" value="state" forcedType="int" />
 			</stateChange>
 		</eventHandler>
 
