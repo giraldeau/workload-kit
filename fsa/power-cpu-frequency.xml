@@ -19,28 +19,28 @@
 			<label value="CPU Frequency" />
 		</head>
 		<!-- StateValues -->
-		<definedValue name="CSTATE_0" value="800000"   color="#00007f" />
-		<definedValue name="CSTATE_1" value="1000000"   color="#0000a9" />
-		<definedValue name="CSTATE_2" value="1200000"   color="#0000e2" />
-		<definedValue name="CSTATE_3" value="1400000"   color="#001cff" />
-		<definedValue name="CSTATE_4" value="1500000"   color="#0054ff" />
-		<definedValue name="CSTATE_5" value="1700000"   color="#008dff" />
-		<definedValue name="CSTATE_6" value="1900000"   color="#00c6ff" />
-		<definedValue name="CSTATE_7" value="2100000"   color="#00ffff" />
-		<definedValue name="CSTATE_8" value="2300000"   color="#38ffc6" />
-		<definedValue name="CSTATE_9" value="2500000"   color="#70ff8d" />
-		<definedValue name="CSTATE_10" value="2700000" color="#a9ff54" />
-		<definedValue name="CSTATE_11" value="2800000" color="#e2ff1c" />
-		<definedValue name="CSTATE_12" value="3000000" color="#ffe200" />
-		<definedValue name="CSTATE_13" value="3200000" color="#ffa900" />
-		<definedValue name="CSTATE_14" value="3401000" color="#d40000" />
+		<definedValue name="CSTATE_0" value="800000"   color="#fcb8b8" />
+		<definedValue name="CSTATE_1" value="1000000"   color="#fca8a8" />
+		<definedValue name="CSTATE_2" value="1200000"   color="#fc8888" />
+		<definedValue name="CSTATE_3" value="1400000"   color="#fc8484" />
+		<definedValue name="CSTATE_4" value="1500000"   color="#fc6060" />
+		<definedValue name="CSTATE_5" value="1700000"   color="#fc4c4c" />
+		<definedValue name="CSTATE_6" value="1900000"   color="#fc3838" />
+		<definedValue name="CSTATE_7" value="2100000"   color="#fc2828" />
+		<definedValue name="CSTATE_8" value="2300000"   color="#fc1818" />
+		<definedValue name="CSTATE_9" value="2500000"   color="#fc0404" />
+		<definedValue name="CSTATE_10" value="2700000" color="#d40000" />
+		<definedValue name="CSTATE_11" value="2800000" color="#dc0000" />
+		<definedValue name="CSTATE_12" value="3000000" color="#c40000" />
+		<definedValue name="CSTATE_13" value="3200000" color="#c00000" />
+		<definedValue name="CSTATE_14" value="3401000" color="#a00000" />
 
 		<entry path="CPU/*">
 			<display type="self" />
 		</entry>
 	</timeGraphView>
 
-	<stateProvider id="cpufreq.sp" version="2">
+	<stateProvider id="cpufreq.sp" version="3">
 		<head>
 			<traceType id="org.eclipse.linuxtools.lttng2.kernel.tracetype" />
 			<label value="CPU Frequency" />
