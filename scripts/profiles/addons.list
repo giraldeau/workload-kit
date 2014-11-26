@@ -6,7 +6,6 @@ irq_handler_entry
 irq_handler_exit
 lttng_statedump_end
 lttng_statedump_file_descriptor
-lttng_statedump_inet_sock
 lttng_statedump_process_state
 lttng_statedump_start
 sched_process_exec
