@@ -237,6 +237,7 @@ int rpc_experiment(struct opts *opts, struct cx *cx) {
 		fprintf(out, "%d,%ld.%09ld\n", i, ts.tv_sec, ts.tv_nsec);
 	}
 	fclose(out);
+	return 0;
 }
 
 int main(int argc, char *argv[]) {
