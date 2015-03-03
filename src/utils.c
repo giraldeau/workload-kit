@@ -12,6 +12,7 @@
 #include <string.h>
 #include <sys/syscall.h>
 #include <time.h>
+#include <math.h>
 #include "utils.h"
 
 void throw(const char *msg)
@@ -67,23 +68,77 @@ void time_add(struct timespec *x, struct timespec *y)
     }
 }
 
-void profile_func(struct profile *prof) {
+double timespec_to_double_ns(struct timespec *t) {
+	return (double)(t->tv_sec * 1000000000 + t->tv_nsec);
+}
+
+void profile_init(struct profile *prof)
+{
+	size_t size = prof->repeat * sizeof(struct timespec);
+	/*
+	 * allocate memory ahead and writes to it to avoid page fault
+	 */
+	void *data = malloc(size);
+	memset(data, 0, size);
+	prof->data = data;
+	prof->name = prof->name != NULL ? prof->name : "default";
+}
+
+void profile_destroy(struct profile *prof)
+{
+	free(prof->data);
+	prof->data = NULL;
+}
+
+void profile_func(struct profile *prof)
+{
 	int i;
-	struct timespec *data;
-	/* allocate memory ahead and writes to it to avoid page fault */
-	data = malloc(prof->repeat * sizeof(struct timespec));
-	memset(data, 0, prof->repeat * sizeof(struct timespec));
+	struct timespec *data = prof->data;
 
 	for (i = 0; i < prof->repeat; i++) {
 		clock_gettime(CLOCK_MONOTONIC, &data[i]);
 		prof->func(prof->args);
 	}
+}
 
+void profile_stats(struct profile *prof)
+{
+	int i;
 	struct timespec total = { .tv_sec = 0, .tv_nsec = 0 };
+
+	if (prof->data == NULL)
+		return;
+
 	for (i = 0; i < prof->repeat - 1; i++) {
-		struct timespec delta = time_sub(&data[i + 1], &data[i]);
+		struct timespec delta = time_sub(&prof->data[i + 1], &prof->data[i]);
 		time_add(&total, &delta);
 	}
-	prof->mean = (double)(total.tv_sec * 1000000000 + total.tv_nsec) / prof->repeat;
-	printf("mean=%f\n", prof->mean);
+	prof->mean = timespec_to_double_ns(&total) / prof->repeat;
+	prof->sd = 0.0;
+
+	for (i = 0; i < prof->repeat - 1; i++) {
+		struct timespec delta = time_sub(&prof->data[i + 1], &prof->data[i]);
+		double nsec = timespec_to_double_ns(&delta);
+		double diff = (nsec - prof->mean);
+		prof->sd += diff * diff;
+	}
+	prof->sd = sqrt(prof->sd / prof->repeat);
+	printf("profile %s mean=%f sd=%f\n", prof->name, prof->mean, prof->sd);
+}
+
+void profile_save(struct profile *prof)
+{
+	int i;
+
+	char *fname;
+	asprintf(&fname, "%s.csv", prof->name);
+	FILE *out = fopen(fname, "w");
+	fprintf(out, "iter;nsec;\n");
+	for (i = 0; i < prof->repeat - 1; i++) {
+		struct timespec delta = time_sub(&prof->data[i + 1], &prof->data[i]);
+		long nsec = timespec_to_double_ns(&delta);
+		fprintf(out, "%d;%ld;\n", i, nsec);
+	}
+	free(fname);
+	fclose(out);
 }

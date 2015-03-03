@@ -9,11 +9,14 @@
 #define UTILS_H_
 
 struct profile {
+	char *name;
 	int (*func)(void *args);
 	void *args;
 	int repeat;
-	float mean;
-	float sd;
+	double mean;
+	double sd;
+	int nr_thread;
+	struct timespec *data;
 };
 
 void throw(const char *msg);
