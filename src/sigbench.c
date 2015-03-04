@@ -46,6 +46,7 @@
 
 struct experiment {
 	int nr_thread;
+	int foreach;
 	int repeat;
 	int verbose;
 };
@@ -56,6 +57,7 @@ static void usage(void) {
 	fprintf(stderr, "\nOptions:\n\n");
 	fprintf(stderr, "--thread N       number of threads to be spawned\n");
 	fprintf(stderr, "--repeat N       number of repetition\n");
+	fprintf(stderr, "--foreach        scalability analysis\n");
 	fprintf(stderr, "--verbose        be verbose\n");
 	fprintf(stderr, "--help           print this message and exit\n");
 	fprintf(stderr, "\n");
@@ -74,16 +76,20 @@ static void parse_opts(int argc, char **argv, struct experiment *exp) {
 			{ 0, 0, 0, 0 }
 	};
 
+	exp->foreach = 0;
 	exp->nr_thread = omp_get_num_procs();
 	exp->repeat = DEFAULT_REPEAT;
 
-	while ((opt = getopt_long(argc, argv, "hd:t:r:v", options, &idx)) != -1) {
+	while ((opt = getopt_long(argc, argv, "hd:t:r:fv", options, &idx)) != -1) {
 		switch (opt) {
 		case 't':
 			exp->nr_thread = atoi(optarg);
 			break;
 		case 'r':
 			exp->repeat = atoi(optarg);
+			break;
+		case 'f':
+			exp->foreach = 1;
 			break;
 		case 'h':
 			usage();
@@ -113,7 +119,7 @@ int sigbench_profile_func(void *args)
 int sigbench_profile_calibrate(void *args)
 {
 	(void) args;
-	volatile int i = 1000000;
+	volatile int i = 1;
 	while(i > 0)
 		i--;
 	return 0;
@@ -146,7 +152,7 @@ void sigbench_once(long nr, long repeat)
 		clock_gettime(CLOCK_MONOTONIC, &t2);
 		#pragma omp barrier
 		e = time_sub(&t2, &t1);
-		double es = timespec_to_double_ns_v(&e);
+		double es = timespec_to_double_ns(&e);
 		printf("sec=%ld nsec=%ld es=%f\n", e.tv_sec, e.tv_nsec, es);
 		#pragma omp critical
 		{
@@ -171,13 +177,17 @@ int main(int argc, char **argv)
 
 	parse_opts(argc, argv, &exp);
 
-	/* install signal handler */
 	sigact.sa_sigaction = signal_handler;
 	sigact.sa_flags = SA_SIGINFO;
 	sigaction(SIGUSR1, &sigact, NULL);
 
-	for(i = 0; (1 << i) <= exp.nr_thread; i++)
-		sigbench_once((1 << i), exp.repeat);
+	if (exp.foreach) {
+		for(i = 0; (1 << i) <= exp.nr_thread; i++) {
+			sigbench_once((1 << i), exp.repeat);
+		}
+	} else {
+		sigbench_once(exp.nr_thread, exp.repeat);
+	}
 
 	sigaction(SIGUSR1, NULL, NULL);
 	return 0;

@@ -75,14 +75,6 @@ double timespec_to_double_ns(struct timespec *t)
 	return sec + nsec;
 }
 
-double timespec_to_double_ns_v(struct timespec *t)
-{
-	double sec = ((double)t->tv_sec) * 1000000000.0;
-	double nsec = (double) t->tv_nsec;
-	printf("conversion sec=%f nsec=%f\n", sec, nsec);
-	return sec + nsec;
-}
-
 void profile_init(struct profile *prof)
 {
 	size_t size = prof->repeat * sizeof(struct timespec);
