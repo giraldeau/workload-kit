@@ -1,7 +1,13 @@
 bin_PROGRAMS = wk-ioburst wk-deadlock wk-dthread wk-inception wk-rpc-client \
                wk-rpc-server wk-lockfight wk-cpm1 wk-cpm2 wk-cpm3 wk-pipeline \
                wk-mutex wk-imbalance wk-reparent wk-pipette wk-pulse wk-schedfreq \
-               wk-copymm wk-evfreq wk-sigbench
+               wk-copymm wk-evfreq wk-sigbench wk-signest wk-timemalloc
+
+wk_timemalloc_SOURCES = timemalloc.c
+wk_timemalloc_LDADD = libwk.a -lm
+
+wk_signest_SOURCES = signest.c
+wk_signest_CFLAGS = -fno-omit-frame-pointer -rdynamic
 
 wk_sigbench_SOURCES = sigbench.c
 wk_sigbench_CFLAGS = -fopenmp

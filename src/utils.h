@@ -33,6 +33,7 @@ void profile_destroy(struct profile *prof);
 void profile_func(struct profile *prof);
 void profile_stats(struct profile *prof);
 void profile_save(struct profile *prof);
+void profile_combo(struct profile *prof);
 
 #define ARG_CHECK(cond, fmt ...)		\
 	do {								\

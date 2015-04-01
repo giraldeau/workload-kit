@@ -145,3 +145,12 @@ void profile_save(struct profile *prof)
 	free(fname);
 	fclose(out);
 }
+
+void profile_combo(struct profile *prof)
+{
+    profile_init(prof);
+    profile_func(prof);
+    profile_stats(prof);
+    profile_save(prof);
+    profile_destroy(prof);
+}
