@@ -11,8 +11,10 @@
 #include <unistd.h>
 #include <string.h>
 #include <sys/syscall.h>
+#include <sys/mman.h>
 #include <time.h>
 #include <math.h>
+#include <assert.h>
 #include "utils.h"
 
 void throw(const char *msg)
@@ -37,6 +39,22 @@ int do_sleep(int mili) {
 	}
 	gettimeofday(&t2, NULL);
 	return 0;
+}
+
+int do_page_faults(int repeat)
+{
+    int i;
+    char *buf;
+    int pgsz = getpagesize();
+
+    for (i = 0; i < repeat; i++) {
+        buf = mmap(NULL, pgsz, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+        assert(buf);
+        memset(buf, 0x42, pgsz);
+        munmap(buf, pgsz);
+        madvise(buf, pgsz, MADV_DONTNEED);
+    }
+    return 0;
 }
 
 int gettid() {

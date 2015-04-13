@@ -21,6 +21,7 @@ struct profile {
 
 void throw(const char *msg);
 int do_sleep(int mili);
+int do_page_faults(int repeat);
 int gettid();
 
 struct timespec time_sub(struct timespec *x, struct timespec *y);
