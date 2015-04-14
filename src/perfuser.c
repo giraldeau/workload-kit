@@ -26,6 +26,8 @@
 #include <pthread.h>
 #include <getopt.h>
 
+#include "utils.h"
+
 #define DEFAULT_THREAD 1
 #define DEFAULT_REPEAT 1
 #define DEFAULT_ITER_MAIN 1000000
@@ -41,6 +43,8 @@ static struct perf_event_attr def_attr = {
     .config = PERF_COUNT_HW_CPU_CYCLES,
     .freq = 0,
     .disabled = 1,
+    .watermark = 1,
+    .wakeup_events = 1,
 };
 
 struct args {
@@ -56,6 +60,8 @@ struct args {
     struct counter *counters;
     void (*before)(struct args *args);
     void (*after)(struct args *args);
+    struct timespec t1;
+    struct timespec t2;
 };
 
 struct counter {
@@ -90,16 +96,12 @@ void hog(long iter)
 static void signal_handler(int signum, siginfo_t *info, void *arg)
 {
     struct counter *cnt = &g_counters[rank];
-    int disable = cnt->args->disable;
-
-    if (disable)
-        ioctl(cnt->fd, PERF_EVENT_IOC_DISABLE, 0);
 
     cnt->hits++;
     hog(cnt->args->iter_overhead);
 
-    if (disable)
-        ioctl(cnt->fd, PERF_EVENT_IOC_ENABLE, 0);
+    if (cnt->args->disable)
+        ioctl(cnt->fd, PERF_EVENT_IOC_REFRESH, 1);
 
     /*
     int ret;
@@ -180,6 +182,8 @@ int open_counter(struct counter *counter)
 
     // 3, 2, 1... and lift-off! ;-)
     ioctl(counter->fd, PERF_EVENT_IOC_ENABLE, 0);
+    if (counter->args->disable)
+        ioctl(counter->fd, PERF_EVENT_IOC_REFRESH, 1);
     return 0;
 }
 
@@ -197,10 +201,9 @@ void *do_work(void *arg)
 
     pthread_barrier_wait(&barrier);
 
-    int i;
-    for(i = 0; i < cnt->args->repeat; i++) {
-        hog(cnt->args->iter_main);
-    }
+    clock_gettime(CLOCK_MONOTONIC_RAW, &cnt->args->t1);
+    hog(cnt->args->iter_main);
+    clock_gettime(CLOCK_MONOTONIC_RAW, &cnt->args->t2);
 
     close_counter(cnt);
     return NULL;
@@ -317,7 +320,7 @@ void before_run(struct args *args)
 
 void print_status(struct args *args)
 {
-    printf("run disable=%d iter_overhead=%ld hits=%d\n", args->disable, args->iter_overhead, args->counters[0].hits);
+    printf("run disable=%d iter_overhead=%-7ld hits=%d\n", args->disable, args->iter_overhead, args->counters[0].hits);
 }
 
 void after_run(struct args *args)
@@ -327,33 +330,39 @@ void after_run(struct args *args)
     for (i = 0; i < args->nr_thread; i++) {
         hits += args->counters[i].hits;
     }
-    fprintf(args->out, "%d;%ld;%ld;%d;%d\n", args->nr_thread, args->iter_main,
-            args->iter_overhead, args->disable, hits);
+    struct timespec ts = time_sub(&args->t2, &args->t1);
+    double elapsed = timespec_to_double_ns(&ts);
+
+    fprintf(args->out, "%d;%ld;%ld;%d;%d;%.3f\n", args->nr_thread, args->iter_main,
+            args->iter_overhead, args->disable, hits, elapsed / 1000000000.0);
     print_status(args);
+}
+
+void stats_header(struct args *args)
+{
+    fprintf(args->out, "%s;%s;%s,%s;%s;%s;\n", "threads", "iter_main", "iter_overhead", "disable", "hits", "elapsed");
 }
 
 int do_all(struct args *args)
 {
+    int i;
     int disable;
     long overhead;
 
-    // header
-    fprintf(args->out, "%s;%s;%s,%s;%s;\n", "threads", "iter_main", "iter_overhead", "disable", "hits");
-
-    args->before = before_run;
-    args->after = after_run;
     for (disable = 0; disable <= 1; disable++) {
-        for (overhead = 1; overhead < 1000000; overhead *= 2) {
+        for (overhead = 1; overhead <= (1<<20); overhead *= 2) {
             args->disable = disable;
             args->iter_overhead = overhead;
-            do_one(args);
+            for (i = 0; i < args->repeat; i++) {
+                do_one(args);
+            }
         }
     }
     return 0;
 }
 
 int main(int argc, char **argv) {
-    int ret;
+    int ret, i;
     struct args args;
     parse_opts(argc, argv, &args);
     pthread_barrier_init(&barrier, NULL, args.nr_thread);
@@ -361,12 +370,16 @@ int main(int argc, char **argv) {
 
     args.out = fopen("perfuser.csv", "w");
     assert(args.out != NULL);
+    stats_header(&args);
 
+    args.before = before_run;
+    args.after = after_run;
     if (args.all) {
         ret = do_all(&args);
     } else {
-        args.after = print_status;
-        ret = do_one(&args);
+        for(i = 0; i < args.repeat; i++) {
+            ret = do_one(&args);
+        }
     }
 
     fflush(args.out);
