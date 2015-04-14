@@ -27,7 +27,7 @@
 #include <getopt.h>
 
 #define DEFAULT_THREAD 1
-#define DEFAULT_REPEAT 10
+#define DEFAULT_REPEAT 1
 #define DEFAULT_ITER_MAIN 1000000
 #define DEFAULT_ITER_OVERHEAD 1
 #define DEFAULT_DISABLE 1
@@ -40,8 +40,8 @@ static struct perf_event_attr def_attr = {
     .size = sizeof(def_attr),
     .config = PERF_COUNT_HW_CPU_CYCLES,
     .freq = 0,
+    .disabled = 1,
 };
-
 
 struct args {
     int nr_thread;
@@ -52,6 +52,10 @@ struct args {
     int disable;
     int period;
     struct perf_event_attr attr;
+    FILE *out;
+    struct counter *counters;
+    void (*before)(struct args *args);
+    void (*after)(struct args *args);
 };
 
 struct counter {
@@ -66,7 +70,7 @@ struct counter {
 
 pthread_barrier_t barrier;
 static int __thread rank;
-static struct counter *cnts;
+static struct counter *g_counters;
 
 static long sys_perf_event_open(struct perf_event_attr *hw_event, pid_t pid,
         int cpu, int group_fd, unsigned long flags)
@@ -85,17 +89,19 @@ void hog(long iter)
 
 static void signal_handler(int signum, siginfo_t *info, void *arg)
 {
-    struct counter *cnt = &cnts[rank];
+    struct counter *cnt = &g_counters[rank];
     int disable = cnt->args->disable;
 
     if (disable)
         ioctl(cnt->fd, PERF_EVENT_IOC_DISABLE, 0);
 
+    cnt->hits++;
     hog(cnt->args->iter_overhead);
 
     if (disable)
         ioctl(cnt->fd, PERF_EVENT_IOC_ENABLE, 0);
 
+    /*
     int ret;
     sigset_t set;
     sigemptyset(&set);
@@ -130,6 +136,7 @@ static void signal_handler(int signum, siginfo_t *info, void *arg)
         fclose(out);
     }
     assert(cnt->hits < 10);
+    */
 }
 
 int install_sighand()
@@ -170,6 +177,9 @@ int open_counter(struct counter *counter)
 
     counter->fd = fd;
     counter->tid = tid;
+
+    // 3, 2, 1... and lift-off! ;-)
+    ioctl(counter->fd, PERF_EVENT_IOC_ENABLE, 0);
     return 0;
 }
 
@@ -193,8 +203,6 @@ void *do_work(void *arg)
     }
 
     close_counter(cnt);
-
-    printf("%d %d\n", cnt->tid, cnt->hits);
     return NULL;
 }
 
@@ -225,16 +233,17 @@ static void parse_opts(int argc, char **argv, struct args *args) {
             { "overhead",   1, 0, 'x' },
             { "disable",    1, 0, 'd' },
             { "period",     1, 0, 'p' },
-            { "all",        1, 0, 'a' },
+            { "all",        0, 0, 'a' },
             { "verbose",    0, 0, 'v' },
             { 0, 0, 0, 0 }
     };
 
+    memset(args, 0, sizeof(*args));
     args->nr_thread = DEFAULT_THREAD;
     args->repeat = DEFAULT_REPEAT;
     args->all = DEFAULT_ALL;
-    args->iter_main = DEFAULT_REPEAT;
-    args->iter_overhead = 1;
+    args->iter_main = DEFAULT_ITER_MAIN;
+    args->iter_overhead = DEFAULT_ITER_OVERHEAD;
     args->disable = DEFAULT_DISABLE;
     args->period = DEFAULT_PERIOD;
     args->attr = def_attr;
@@ -271,39 +280,96 @@ static void parse_opts(int argc, char **argv, struct args *args) {
         }
     }
 
-    args->attr.disabled = args->disable;
     args->attr.sample_period = args->period;
     args->attr.freq = 0; // make sure freq is zero to select sample_period in the union
 }
 
-int main(int argc, char **argv) {
+int do_one(struct args *args)
+{
     int i;
-    struct args args;
-    parse_opts(argc, argv, &args);
+    g_counters = calloc(args->nr_thread, sizeof(struct counter));
+    args->counters = g_counters;
 
-    // disable true and false
-    // explore number of threads
-    // explore work inside handler
-
-    /* init */
-    pthread_barrier_init(&barrier, NULL, args.nr_thread);
-    cnts = calloc(args.nr_thread, sizeof(struct counter));
-
-    install_sighand();
-
+    if (args->before)
+        args->before(args);
     /* spawn */
-    for (i = 0; i < args.nr_thread; i++) {
-        cnts[i].args = &args;
-        cnts[i].rank = i;
-        pthread_create(&cnts[i].th, NULL, do_work, &cnts[i]);
+    for (i = 0; i < args->nr_thread; i++) {
+        g_counters[i].args = args;
+        g_counters[i].rank = i;
+        pthread_create(&g_counters[i].th, NULL, do_work, &g_counters[i]);
     }
 
     /* join */
-    for (i = 0; i < args.nr_thread; i++) {
-        pthread_join(cnts[i].th, NULL);
+    for (i = 0; i < args->nr_thread; i++) {
+        pthread_join(g_counters[i].th, NULL);
+    }
+    if (args->after)
+        args->after(args);
+    free(g_counters);
+    g_counters = NULL;
+    args->counters = NULL;
+    return 0;
+}
+
+void before_run(struct args *args)
+{
+}
+
+void print_status(struct args *args)
+{
+    printf("run disable=%d iter_overhead=%ld hits=%d\n", args->disable, args->iter_overhead, args->counters[0].hits);
+}
+
+void after_run(struct args *args)
+{
+    int hits = 0;
+    int i;
+    for (i = 0; i < args->nr_thread; i++) {
+        hits += args->counters[i].hits;
+    }
+    fprintf(args->out, "%d;%ld;%ld;%d;%d\n", args->nr_thread, args->iter_main,
+            args->iter_overhead, args->disable, hits);
+    print_status(args);
+}
+
+int do_all(struct args *args)
+{
+    int disable;
+    long overhead;
+
+    // header
+    fprintf(args->out, "%s;%s;%s,%s;%s;\n", "threads", "iter_main", "iter_overhead", "disable", "hits");
+
+    args->before = before_run;
+    args->after = after_run;
+    for (disable = 0; disable <= 1; disable++) {
+        for (overhead = 1; overhead < 1000000; overhead *= 2) {
+            args->disable = disable;
+            args->iter_overhead = overhead;
+            do_one(args);
+        }
+    }
+    return 0;
+}
+
+int main(int argc, char **argv) {
+    int ret;
+    struct args args;
+    parse_opts(argc, argv, &args);
+    pthread_barrier_init(&barrier, NULL, args.nr_thread);
+    install_sighand();
+
+    args.out = fopen("perfuser.csv", "w");
+    assert(args.out != NULL);
+
+    if (args.all) {
+        ret = do_all(&args);
+    } else {
+        args.after = print_status;
+        ret = do_one(&args);
     }
 
-    /* terminate */
-    free(cnts);
-    return 0;
+    fflush(args.out);
+    fclose(args.out);
+    return ret;
 }
