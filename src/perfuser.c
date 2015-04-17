@@ -28,11 +28,18 @@
 
 #include "utils.h"
 
+enum disable_mode {
+    DISABLE_NONE = 0,
+    DISABLE_EARLY = 1,
+    DISABLE_LATE = 2,
+    DISABLE_LAST = 3,
+};
+
 #define DEFAULT_THREAD 1
 #define DEFAULT_REPEAT 1
 #define DEFAULT_ITER_MAIN 1000000
 #define DEFAULT_ITER_OVERHEAD 1
-#define DEFAULT_DISABLE 1
+#define DEFAULT_DISABLE DISABLE_EARLY
 #define DEFAULT_PERIOD 10000
 #define DEFAULT_ALL 0
 #define progname "wk-perfuser"
@@ -40,7 +47,7 @@
 static struct perf_event_attr def_attr = {
     .type = PERF_TYPE_HARDWARE,
     .size = sizeof(def_attr),
-    .config = PERF_COUNT_HW_CPU_CYCLES,
+    .config = PERF_COUNT_HW_INSTRUCTIONS,
     .freq = 0,
     .disabled = 1,
     .watermark = 1,
@@ -96,12 +103,20 @@ void hog(long iter)
 static void signal_handler(int signum, siginfo_t *info, void *arg)
 {
     struct counter *cnt = &g_counters[rank];
+    int disable = cnt->args->disable;
+
+    if (disable == DISABLE_LATE)
+        ioctl(cnt->fd, PERF_EVENT_IOC_DISABLE, 0);
 
     cnt->hits++;
     hog(cnt->args->iter_overhead);
 
-    if (cnt->args->disable)
+    __sync_synchronize();
+    if (disable == DISABLE_EARLY) {
         ioctl(cnt->fd, PERF_EVENT_IOC_REFRESH, 1);
+    } else if (disable == DISABLE_LATE) {
+        ioctl(cnt->fd, PERF_EVENT_IOC_ENABLE, 0);
+    }
 
     /*
     int ret;
@@ -181,9 +196,9 @@ int open_counter(struct counter *counter)
     counter->tid = tid;
 
     // 3, 2, 1... and lift-off! ;-)
-    ioctl(counter->fd, PERF_EVENT_IOC_ENABLE, 0);
-    if (counter->args->disable)
+    if (counter->args->disable == DISABLE_EARLY)
         ioctl(counter->fd, PERF_EVENT_IOC_REFRESH, 1);
+    ioctl(counter->fd, PERF_EVENT_IOC_ENABLE, 0);
     return 0;
 }
 
@@ -340,7 +355,7 @@ void after_run(struct args *args)
 
 void stats_header(struct args *args)
 {
-    fprintf(args->out, "%s;%s;%s,%s;%s;%s;\n", "threads", "iter_main", "iter_overhead", "disable", "hits", "elapsed");
+    fprintf(args->out, "%s;%s;%s;%s;%s;%s;\n", "threads", "iter_main", "iter_overhead", "disable", "hits", "elapsed");
 }
 
 int do_all(struct args *args)
@@ -349,7 +364,16 @@ int do_all(struct args *args)
     int disable;
     long overhead;
 
-    for (disable = 0; disable <= 1; disable++) {
+    for (overhead = 0; overhead < 10; overhead++) {
+        args->disable = DISABLE_EARLY;
+        args->iter_overhead = overhead * 100000;
+        for (i = 0; i < args->repeat; i++) {
+            do_one(args);
+        }
+    }
+
+    /*
+    for (disable = 0; disable < DISABLE_LAST; disable++) {
         for (overhead = 1; overhead <= (1<<20); overhead *= 2) {
             args->disable = disable;
             args->iter_overhead = overhead;
@@ -358,6 +382,7 @@ int do_all(struct args *args)
             }
         }
     }
+    */
     return 0;
 }
 
