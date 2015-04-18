@@ -27,6 +27,7 @@
 #include <getopt.h>
 
 #include "utils.h"
+#include "calibrate.h"
 
 enum disable_mode {
     DISABLE_NONE = 0,
@@ -37,11 +38,12 @@ enum disable_mode {
 
 #define DEFAULT_THREAD 1
 #define DEFAULT_REPEAT 1
+#define DEFAULT_DRYRUN 0
 #define DEFAULT_ITER_MAIN 1000000
 #define DEFAULT_ITER_OVERHEAD 1
 #define DEFAULT_DISABLE DISABLE_EARLY
 #define DEFAULT_PERIOD 10000
-#define DEFAULT_ALL 0
+#define DEFAULT_EXP NULL
 #define progname "wk-perfuser"
 
 static struct perf_event_attr def_attr = {
@@ -54,21 +56,30 @@ static struct perf_event_attr def_attr = {
     .wakeup_events = 1,
 };
 
+struct args;
+
+struct exp {
+    char *name;
+    int (*func)(struct args *);
+    void (*before)(struct args *);
+    void (*after)(struct args *);
+};
+
 struct args {
     int nr_thread;
     long repeat;
-    int all;
+    struct exp *exp;
     long iter_overhead;
     long iter_main;
     int disable;
     int period;
+    int dryrun;
     struct perf_event_attr attr;
     FILE *out;
     struct counter *counters;
-    void (*before)(struct args *args);
-    void (*after)(struct args *args);
     struct timespec t1;
     struct timespec t2;
+    long iter_1ms;
 };
 
 struct counter {
@@ -212,30 +223,132 @@ void *do_work(void *arg)
     struct counter *cnt = arg;
 
     rank = cnt->rank;
-    open_counter(cnt);
+    if (!cnt->args->dryrun)
+        open_counter(cnt);
 
     pthread_barrier_wait(&barrier);
 
-    clock_gettime(CLOCK_MONOTONIC_RAW, &cnt->args->t1);
     hog(cnt->args->iter_main);
-    clock_gettime(CLOCK_MONOTONIC_RAW, &cnt->args->t2);
 
-    close_counter(cnt);
+    if (!cnt->args->dryrun)
+        close_counter(cnt);
     return NULL;
 }
 
+int do_one(struct args *args)
+{
+    int i;
+    g_counters = calloc(args->nr_thread, sizeof(struct counter));
+    args->counters = g_counters;
+
+    if (args->exp->before)
+        args->exp->before(args);
+    /* spawn */
+    clock_gettime(CLOCK_MONOTONIC_RAW, &args->t1);
+    for (i = 0; i < args->nr_thread; i++) {
+        g_counters[i].args = args;
+        g_counters[i].rank = i;
+        pthread_create(&g_counters[i].th, NULL, do_work, &g_counters[i]);
+    }
+
+    /* join */
+    for (i = 0; i < args->nr_thread; i++) {
+        pthread_join(g_counters[i].th, NULL);
+    }
+    clock_gettime(CLOCK_MONOTONIC_RAW, &args->t2);
+    if (args->exp->after)
+        args->exp->after(args);
+    free(g_counters);
+    g_counters = NULL;
+    args->counters = NULL;
+    return 0;
+}
+
+void before_run(struct args *args)
+{
+}
+
+void print_status(struct args *args)
+{
+    printf("run disable=%d iter_overhead=%-7ld hits=%d\n",
+            args->disable, args->iter_overhead, args->counters[0].hits);
+}
+
+void after_run(struct args *args)
+{
+    int hits = 0;
+    int i;
+    for (i = 0; i < args->nr_thread; i++) {
+        hits += args->counters[i].hits;
+    }
+    struct timespec ts = time_sub(&args->t2, &args->t1);
+    double elapsed = timespec_to_double_ns(&ts);
+
+    fprintf(args->out, "%d;%d;%d%ld;%ld;%d;%d;%.3f\n", args->nr_thread, args->dryrun,
+            args->period, args->iter_main, args->iter_overhead, args->disable,
+            hits, elapsed / 1000000000.0);
+    fflush(args->out);
+    print_status(args);
+}
+
+void stats_header(struct args *args)
+{
+    fprintf(args->out, "%s;%s;%s;%s;%s;%s;%s;%s;\n", "threads", "dryrun", "period",
+            "iter_main", "iter_overhead", "disable", "hits", "elapsed");
+}
+
+int do_handler_work(struct args *args)
+{
+    int i;
+    int disable;
+    long overhead;
+
+    for (overhead = 0; overhead < 10; overhead++) {
+        args->disable = DISABLE_EARLY;
+        args->iter_overhead = overhead * 100000;
+        do_one(args);
+    }
+
+    return 0;
+}
+
+int do_sampling_overhead(struct args *args)
+{
+    int dryrun;
+
+    args->iter_main = args->iter_1ms * 1000;
+    args->iter_overhead = 0;
+    args->disable = DISABLE_EARLY;
+    for (dryrun = 0; dryrun < 2; dryrun++) {
+        args->dryrun = dryrun;
+        do_one(args);
+    }
+    return 0;
+}
+
+static struct exp exps[] = {
+    { "handler-work-vs-hits", do_handler_work, before_run, after_run  },
+    { "sampling-overhead", do_sampling_overhead, before_run, after_run  },
+    { NULL, NULL },
+};
+
 __attribute__((noreturn))
 static void usage(void) {
+    struct exp *e;
     fprintf(stderr, "Usage: %s [OPTIONS] [COMMAND]\n", progname);
     fprintf(stderr, "\nOptions:\n\n");
     fprintf(stderr, "--thread N       number of threads to be spawned (default = 1)\n");
     fprintf(stderr, "--repeat         number of repetitions\n");
     fprintf(stderr, "--main           main work (iterations)\n");
     fprintf(stderr, "--overhead       overhead work (iterations)\n");
-    fprintf(stderr, "--all            from 1 to n threads\n");
+    fprintf(stderr, "--exp            experiment to run\n");
     fprintf(stderr, "--verbose        be verbose\n");
     fprintf(stderr, "--help           print this message and exit\n");
     fprintf(stderr, "\n");
+    fprintf(stderr, "available experiments\n");
+    for (e = exps; e->name != NULL; e++) {
+        fprintf(stderr, "%s\n", e->name);
+    }
     exit(EXIT_FAILURE);
 }
 
@@ -251,7 +364,7 @@ static void parse_opts(int argc, char **argv, struct args *args) {
             { "overhead",   1, 0, 'x' },
             { "disable",    1, 0, 'd' },
             { "period",     1, 0, 'p' },
-            { "all",        0, 0, 'a' },
+            { "exp",        1, 0, 'e' },
             { "verbose",    0, 0, 'v' },
             { 0, 0, 0, 0 }
     };
@@ -259,14 +372,15 @@ static void parse_opts(int argc, char **argv, struct args *args) {
     memset(args, 0, sizeof(*args));
     args->nr_thread = DEFAULT_THREAD;
     args->repeat = DEFAULT_REPEAT;
-    args->all = DEFAULT_ALL;
+    args->exp = DEFAULT_EXP;
     args->iter_main = DEFAULT_ITER_MAIN;
     args->iter_overhead = DEFAULT_ITER_OVERHEAD;
     args->disable = DEFAULT_DISABLE;
     args->period = DEFAULT_PERIOD;
+    args->dryrun = DEFAULT_DRYRUN;
     args->attr = def_attr;
 
-    while ((opt = getopt_long(argc, argv, "hvr:t:a:m:x:d:p:", options, &idx)) != -1) {
+    while ((opt = getopt_long(argc, argv, "hvr:t:e:m:x:d:p:", options, &idx)) != -1) {
         switch (opt) {
         case 'r':
             args->repeat = atoi(optarg);
@@ -274,9 +388,17 @@ static void parse_opts(int argc, char **argv, struct args *args) {
         case 't':
             args->nr_thread = atoi(optarg);
             break;
-        case 'a':
-            args->all = 1;
+        case 'e':
+        {
+            struct exp *e;
+            for (e = exps; e->name != NULL; e++) {
+                if (strcmp(e->name, optarg) == 0) {
+                    args->exp = e;
+                    break;
+                }
+            }
             break;
+        }
         case 'm':
             args->iter_main = atol(optarg);
             break;
@@ -298,113 +420,30 @@ static void parse_opts(int argc, char **argv, struct args *args) {
         }
     }
 
+    if (args->exp == NULL) {
+        usage();
+    }
     args->attr.sample_period = args->period;
     args->attr.freq = 0; // make sure freq is zero to select sample_period in the union
 }
 
-int do_one(struct args *args)
-{
-    int i;
-    g_counters = calloc(args->nr_thread, sizeof(struct counter));
-    args->counters = g_counters;
-
-    if (args->before)
-        args->before(args);
-    /* spawn */
-    for (i = 0; i < args->nr_thread; i++) {
-        g_counters[i].args = args;
-        g_counters[i].rank = i;
-        pthread_create(&g_counters[i].th, NULL, do_work, &g_counters[i]);
-    }
-
-    /* join */
-    for (i = 0; i < args->nr_thread; i++) {
-        pthread_join(g_counters[i].th, NULL);
-    }
-    if (args->after)
-        args->after(args);
-    free(g_counters);
-    g_counters = NULL;
-    args->counters = NULL;
-    return 0;
-}
-
-void before_run(struct args *args)
-{
-}
-
-void print_status(struct args *args)
-{
-    printf("run disable=%d iter_overhead=%-7ld hits=%d\n", args->disable, args->iter_overhead, args->counters[0].hits);
-}
-
-void after_run(struct args *args)
-{
-    int hits = 0;
-    int i;
-    for (i = 0; i < args->nr_thread; i++) {
-        hits += args->counters[i].hits;
-    }
-    struct timespec ts = time_sub(&args->t2, &args->t1);
-    double elapsed = timespec_to_double_ns(&ts);
-
-    fprintf(args->out, "%d;%ld;%ld;%d;%d;%.3f\n", args->nr_thread, args->iter_main,
-            args->iter_overhead, args->disable, hits, elapsed / 1000000000.0);
-    print_status(args);
-}
-
-void stats_header(struct args *args)
-{
-    fprintf(args->out, "%s;%s;%s;%s;%s;%s;\n", "threads", "iter_main", "iter_overhead", "disable", "hits", "elapsed");
-}
-
-int do_all(struct args *args)
-{
-    int i;
-    int disable;
-    long overhead;
-
-    for (overhead = 0; overhead < 10; overhead++) {
-        args->disable = DISABLE_EARLY;
-        args->iter_overhead = overhead * 100000;
-        for (i = 0; i < args->repeat; i++) {
-            do_one(args);
-        }
-    }
-
-    /*
-    for (disable = 0; disable < DISABLE_LAST; disable++) {
-        for (overhead = 1; overhead <= (1<<20); overhead *= 2) {
-            args->disable = disable;
-            args->iter_overhead = overhead;
-            for (i = 0; i < args->repeat; i++) {
-                do_one(args);
-            }
-        }
-    }
-    */
-    return 0;
-}
-
 int main(int argc, char **argv) {
     int ret, i;
+    char *fname;
     struct args args;
     parse_opts(argc, argv, &args);
     pthread_barrier_init(&barrier, NULL, args.nr_thread);
     install_sighand();
 
-    args.out = fopen("perfuser.csv", "w");
+    ret = asprintf(&fname, "%s.csv", args.exp->name);
+    assert(ret > 0);
+    args.out = fopen(fname, "w");
     assert(args.out != NULL);
     stats_header(&args);
 
-    args.before = before_run;
-    args.after = after_run;
-    if (args.all) {
-        ret = do_all(&args);
-    } else {
-        for(i = 0; i < args.repeat; i++) {
-            ret = do_one(&args);
-        }
+    args.iter_1ms = calibrate(1000);
+    for (i = 0; i < args.repeat; i++) {
+        args.exp->func(&args);
     }
 
     fflush(args.out);
