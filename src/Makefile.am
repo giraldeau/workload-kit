@@ -4,7 +4,7 @@ bin_PROGRAMS = wk-ioburst wk-deadlock wk-dthread wk-inception wk-rpc-client \
                wk-copymm wk-evfreq wk-sigbench wk-signest wk-timemalloc wk-perfuser
 
 wk_perfuser_SOURCES = perfuser.c
-wk_perfuser_LDADD = libwk.a -lm
+wk_perfuser_LDADD = libwk.a -lm $(UNWIND_LIBS)
 
 wk_timemalloc_SOURCES = timemalloc.c
 wk_timemalloc_LDADD = libwk.a -lm

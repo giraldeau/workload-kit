@@ -40,6 +40,9 @@ AS_IF([test "x$cputemp_support" == "xyes"], [
   AC_SUBST(SENSORS_LIBS)
 ])
 
+PKG_CHECK_MODULES([UNWIND], [libunwind], [],
+ [AC_MSG_ERROR([Cannot find libunwind library with pkg-config])])
+
 AM_CONDITIONAL([HAVE_UST], [test "x$ust_support" == "xyes"])
 AM_CONDITIONAL([HAVE_CPUTEMP], [test "x$cputemp_support" == "xyes"])
 

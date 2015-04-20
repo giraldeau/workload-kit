@@ -26,6 +26,9 @@
 #include <pthread.h>
 #include <getopt.h>
 
+#define UNW_LOCAL_ONLY
+#include <libunwind.h>
+
 #include "utils.h"
 #include "calibrate.h"
 
@@ -312,6 +315,82 @@ int do_handler_work(struct args *args)
     return 0;
 }
 
+enum unw_type {
+    UNW_TYPE_ONLINE,
+    UNW_TYPE_OFFLINE,
+    UNW_TYPE_LAST,
+};
+
+#define MAX_DEPTH 100
+
+void do_unwind_online()
+{
+    unw_cursor_t cursor;
+    unw_context_t uc;
+    unw_word_t buf[MAX_DEPTH];
+    int depth = 0;
+
+    unw_getcontext(&uc);
+    unw_init_local(&cursor, &uc);
+    while (unw_step(&cursor) > 0) {
+        unw_get_reg(&cursor, UNW_REG_IP, &buf[depth]);
+        printf("%d ip = %lx\n", depth, (long) buf[depth]);
+    }
+}
+
+void do_unwind_offline()
+{
+    // save 8k of stack
+    // save registers
+    // tracepoint(unwind, len, stack, len, regs);
+}
+
+void do_unwind(int type)
+{
+    switch (type) {
+    case UNW_TYPE_ONLINE:
+        do_unwind_online();
+        break;
+    case UNW_TYPE_OFFLINE:
+        do_unwind_offline();
+        break;
+    default:
+        break;
+    }
+}
+
+void rec2(int depth, int type);
+
+__attribute__((noinline))
+void rec1(int depth, int type)
+{
+    volatile int x = 42;
+    if (depth > 0) {
+        rec2(depth - 1, type);
+    } else {
+        do_unwind(type);
+    }
+    return;
+}
+
+__attribute__((noinline))
+void rec2(int depth, int type)
+{
+    volatile int x = 42;
+    if (depth > 0) {
+        rec1(depth - 1, type);
+    } else {
+        do_unwind(type);
+    }
+    return;
+}
+
+int do_unwind_overhead(struct args *args)
+{
+    rec1(10, UNW_TYPE_ONLINE);
+    return 0;
+}
+
 int do_sampling_overhead(struct args *args)
 {
     int dryrun;
@@ -329,6 +408,7 @@ int do_sampling_overhead(struct args *args)
 static struct exp exps[] = {
     { "handler-work-vs-hits", do_handler_work, before_run, after_run  },
     { "sampling-overhead", do_sampling_overhead, before_run, after_run  },
+    { "unwind", do_unwind_overhead, before_run, after_run  },
     { NULL, NULL },
 };
 
