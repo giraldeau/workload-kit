@@ -116,6 +116,9 @@ void profile_func(struct profile *prof)
 	int i;
 	struct timespec *data = prof->data;
 
+	// warm
+	prof->func(prof->args);
+
 	for (i = 0; i < prof->repeat; i++) {
 		clock_gettime(CLOCK_MONOTONIC, &data[i]);
 		prof->func(prof->args);
@@ -144,7 +147,12 @@ void profile_stats(struct profile *prof)
 		prof->sd += diff * diff;
 	}
 	prof->sd = sqrt(prof->sd / prof->repeat);
-	printf("profile %s mean=%f sd=%f\n", prof->name, prof->mean, prof->sd);
+}
+
+void profile_stats_print(struct profile *prof, FILE *out)
+{
+    fprintf(out, "profile %s mean=%6.0f sd=%6.0f\n",
+            prof->name, prof->mean, prof->sd);
 }
 
 void profile_save(struct profile *prof)

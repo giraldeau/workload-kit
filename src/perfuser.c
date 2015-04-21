@@ -32,6 +32,10 @@
 #include "utils.h"
 #include "calibrate.h"
 
+#define TRACEPOINT_DEFINE
+#define TRACEPOINT_CREATE_PROBES
+#include "tp.h"
+
 enum disable_mode {
     DISABLE_NONE = 0,
     DISABLE_EARLY = 1,
@@ -39,9 +43,19 @@ enum disable_mode {
     DISABLE_LAST = 3,
 };
 
+enum unw_type {
+    UNW_TYPE_ONLINE,
+    UNW_TYPE_OFFLINE,
+    UNW_TYPE_LAST,
+};
+
+#define MAX_DEPTH 100
+
 #define DEFAULT_THREAD 1
 #define DEFAULT_REPEAT 1
 #define DEFAULT_DRYRUN 0
+#define DEFAULT_UNWIND UNW_TYPE_ONLINE
+#define DEFAULT_DEPTH 25
 #define DEFAULT_ITER_MAIN 1000000
 #define DEFAULT_ITER_OVERHEAD 1
 #define DEFAULT_DISABLE DISABLE_EARLY
@@ -77,6 +91,8 @@ struct args {
     int disable;
     int period;
     int dryrun;
+    int unwind_type;
+    int unwind_depth;
     struct perf_event_attr attr;
     FILE *out;
     struct counter *counters;
@@ -315,34 +331,29 @@ int do_handler_work(struct args *args)
     return 0;
 }
 
-enum unw_type {
-    UNW_TYPE_ONLINE,
-    UNW_TYPE_OFFLINE,
-    UNW_TYPE_LAST,
-};
-
-#define MAX_DEPTH 100
-
 void do_unwind_online()
 {
     unw_cursor_t cursor;
     unw_context_t uc;
-    unw_word_t buf[MAX_DEPTH];
-    int depth = 0;
+    void *addr[MAX_DEPTH];
+    size_t depth = 0;
 
     unw_getcontext(&uc);
     unw_init_local(&cursor, &uc);
-    while (unw_step(&cursor) > 0) {
-        unw_get_reg(&cursor, UNW_REG_IP, &buf[depth]);
-        printf("%d ip = %lx\n", depth, (long) buf[depth]);
+    while (depth < MAX_DEPTH && unw_step(&cursor) > 0) {
+        unw_get_reg(&cursor, UNW_REG_IP, (unw_word_t *) &addr[depth]);
+        depth++;
     }
+    tracepoint(unwind, online, addr, depth);
 }
 
 void do_unwind_offline()
 {
-    // save 8k of stack
-    // save registers
-    // tracepoint(unwind, len, stack, len, regs);
+    size_t size = 4096 * 2;
+    ucontext_t uc;
+    getcontext(&uc);
+    unsigned long sp = ((unsigned long) &uc) - size;
+    tracepoint(unwind, offline, (char *) sp, size, &uc);
 }
 
 void do_unwind(int type)
@@ -359,35 +370,78 @@ void do_unwind(int type)
     }
 }
 
-void rec2(int depth, int type);
+int rec1(int depth, int type);
+int rec2(int depth, int type);
 
-__attribute__((noinline))
-void rec1(int depth, int type)
+int rec(void *arg)
 {
-    volatile int x = 42;
-    if (depth > 0) {
-        rec2(depth - 1, type);
-    } else {
-        do_unwind(type);
-    }
-    return;
+    struct args *args = arg;
+    rec1(args->unwind_depth, args->unwind_type);
+    return 0;
 }
 
 __attribute__((noinline))
-void rec2(int depth, int type)
+int rec1(int depth, int type)
 {
-    volatile int x = 42;
     if (depth > 0) {
-        rec1(depth - 1, type);
+        rec2(--depth, type);
     } else {
         do_unwind(type);
     }
-    return;
+    return 0;
 }
 
-int do_unwind_overhead(struct args *args)
+__attribute__((noinline))
+int rec2(int depth, int type)
 {
-    rec1(10, UNW_TYPE_ONLINE);
+    if (depth > 0) {
+        rec1(--depth, type);
+    } else {
+        do_unwind(type);
+    }
+    return 0;
+}
+
+static int done = 0;
+
+int do_unwind_overhead_one(struct args *args)
+{
+    int ret;
+    int depth;
+
+    struct profile prof = {
+        .name = "unwind",
+        .func = rec,
+        .args = args,
+        .repeat = 1000,
+    };
+
+    if (!done) {
+        printf("depth;type;mean;sd;\n");
+        done = 1;
+    }
+
+    depth = args->unwind_depth; // unwind_depth is updated
+    profile_init(&prof);
+    profile_func(&prof);
+    profile_stats(&prof);
+    printf("%d;%d;%.0f;%.0f\n", depth, args->unwind_type, prof.mean, prof.sd);
+
+    return 0;
+}
+
+int do_unwind_overhead_all(struct args *args)
+{
+    int depth;
+    int type;
+
+    for (type = 0; type < UNW_TYPE_LAST; type++) {
+        for (depth = 0; depth < MAX_DEPTH; depth++) {
+            args->unwind_depth = depth;
+            args->unwind_type = type;
+            do_unwind_overhead_one(args);
+        }
+    }
     return 0;
 }
 
@@ -405,10 +459,37 @@ int do_sampling_overhead(struct args *args)
     return 0;
 }
 
+int perf_event_open_benchmark(void *arg)
+{
+    struct counter *cnt = arg;
+    open_counter(cnt);
+    close_counter(cnt);
+    return 0;
+}
+
+int do_perf_event_open_overhead(struct args *args)
+{
+    struct counter cnt = {
+        .args = args,
+    };
+    struct profile prof = {
+        .name = "perf_event_open",
+        .func = perf_event_open_benchmark,
+        .args = &cnt,
+        .repeat = 10000,
+    };
+
+    profile_combo(&prof);
+    profile_stats_print(&prof, stdout);
+    return 0;
+}
+
 static struct exp exps[] = {
     { "handler-work-vs-hits", do_handler_work, before_run, after_run  },
     { "sampling-overhead", do_sampling_overhead, before_run, after_run  },
-    { "unwind", do_unwind_overhead, before_run, after_run  },
+    { "unwind_all", do_unwind_overhead_all, before_run, after_run },
+    { "unwind", do_unwind_overhead_one, before_run, after_run },
+    { "perf_event_open", do_perf_event_open_overhead, before_run, after_run },
     { NULL, NULL },
 };
 
@@ -422,6 +503,7 @@ static void usage(void) {
     fprintf(stderr, "--main           main work (iterations)\n");
     fprintf(stderr, "--overhead       overhead work (iterations)\n");
     fprintf(stderr, "--exp            experiment to run\n");
+    fprintf(stderr, "--unwind         unwind type [ online | offline ]\n");
     fprintf(stderr, "--verbose        be verbose\n");
     fprintf(stderr, "--help           print this message and exit\n");
     fprintf(stderr, "\n");
@@ -445,6 +527,7 @@ static void parse_opts(int argc, char **argv, struct args *args) {
             { "disable",    1, 0, 'd' },
             { "period",     1, 0, 'p' },
             { "exp",        1, 0, 'e' },
+            { "unwind",     1, 0, 'u' },
             { "verbose",    0, 0, 'v' },
             { 0, 0, 0, 0 }
     };
@@ -458,9 +541,11 @@ static void parse_opts(int argc, char **argv, struct args *args) {
     args->disable = DEFAULT_DISABLE;
     args->period = DEFAULT_PERIOD;
     args->dryrun = DEFAULT_DRYRUN;
+    args->unwind_type = DEFAULT_UNWIND;
+    args->unwind_depth = DEFAULT_DEPTH;
     args->attr = def_attr;
 
-    while ((opt = getopt_long(argc, argv, "hvr:t:e:m:x:d:p:", options, &idx)) != -1) {
+    while ((opt = getopt_long(argc, argv, "hvr:t:e:m:x:d:p:u:", options, &idx)) != -1) {
         switch (opt) {
         case 'r':
             args->repeat = atoi(optarg);
@@ -490,6 +575,13 @@ static void parse_opts(int argc, char **argv, struct args *args) {
             break;
         case 'p':
             args->period = atoi(optarg);
+            break;
+        case 'u':
+            if (strcmp("online", optarg) == 0) {
+                args->unwind_type = UNW_TYPE_ONLINE;
+            } else if (strcmp("offline", optarg) == 0) {
+                args->unwind_type = UNW_TYPE_OFFLINE;
+            }
             break;
         case 'h':
             usage();
