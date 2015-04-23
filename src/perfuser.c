@@ -44,8 +44,10 @@ enum disable_mode {
 };
 
 enum unw_type {
+    UNW_TYPE_NONE,
     UNW_TYPE_ONLINE,
     UNW_TYPE_OFFLINE,
+    UNW_TYPE_BACKTRACE,
     UNW_TYPE_LAST,
 };
 
@@ -299,7 +301,7 @@ void do_unwind_online()
     unw_cursor_t cursor;
     unw_context_t uc;
     void *addr[MAX_DEPTH];
-    size_t depth = 0;
+    int depth = 0;
 
     unw_getcontext(&uc);
     unw_init_local(&cursor, &uc);
@@ -319,14 +321,30 @@ void do_unwind_offline()
     tracepoint(unwind, offline, (char *) sp, size, &uc);
 }
 
+void do_unwind_backtrace()
+{
+    void *addr[MAX_DEPTH];
+    int depth;
+
+    depth = unw_backtrace((void **)&addr, MAX_DEPTH);
+    assert(depth <= MAX_DEPTH);
+    tracepoint(unwind, online, addr, depth);
+}
+
+
 void do_unwind(int type)
 {
     switch (type) {
+    case UNW_TYPE_NONE:
+        break;
     case UNW_TYPE_ONLINE:
         do_unwind_online();
         break;
     case UNW_TYPE_OFFLINE:
         do_unwind_offline();
+        break;
+    case UNW_TYPE_BACKTRACE:
+        do_unwind_backtrace();
         break;
     default:
         break;
@@ -376,7 +394,7 @@ int do_unwind_overhead_one(struct args *args)
         .name = "unwind",
         .func = rec,
         .args = args,
-        .repeat = 1000,
+        .repeat = 100000,
     };
 
     if (!done) {
@@ -540,10 +558,14 @@ static void parse_opts(int argc, char **argv, struct args *args) {
             args->period = atoi(optarg);
             break;
         case 'u':
-            if (strcmp("online", optarg) == 0) {
+            if (strcmp("none", optarg) == 0) {
+                args->unwind_type = UNW_TYPE_NONE;
+            } else if (strcmp("online", optarg) == 0) {
                 args->unwind_type = UNW_TYPE_ONLINE;
             } else if (strcmp("offline", optarg) == 0) {
                 args->unwind_type = UNW_TYPE_OFFLINE;
+            } else if (strcmp("backtrace", optarg) == 0) {
+                args->unwind_type = UNW_TYPE_BACKTRACE;
             }
             break;
         case 'h':
