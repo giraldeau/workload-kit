@@ -147,43 +147,6 @@ static void signal_handler(int signum, siginfo_t *info, void *arg)
     } else if (disable == DISABLE_LATE) {
         ioctl(cnt->fd, PERF_EVENT_IOC_ENABLE, 0);
     }
-
-    /*
-    int ret;
-    sigset_t set;
-    sigemptyset(&set);
-    ret = sigpending(&set);
-    assert(ret == 0);
-    ret = sigismember(&set, SIGIO);
-    printf("sigismember=%d\n", ret);
-    if (ret)
-        cnt->hits++;
-
-    ucontext_t *ctx = arg;
-    ret = memcmp(&ctx->uc_mcontext.gregs, &cnt->regs, sizeof(gregset_t));
-    if (ret == 0) {
-        printf("context same\n");
-    } else {
-        printf("context different\n");
-    }
-
-    int depth = 10;
-    void *bt[depth];
-    backtrace(&bt, depth);
-    backtrace_symbols_fd(&bt, depth, 1);
-    if (cnt->hits < 10) {
-        FILE *out = fopen("dump.data", "a");
-        fwrite(&ctx->uc_mcontext.gregs, sizeof(gregset_t), 1, out);
-        int pad = 512 - sizeof(gregset_t);
-        int cafe = 0xCAFECAFE;
-        int i;
-        for(i = 0; i < (pad / sizeof(cafe)); i++)
-            fwrite(&cafe, sizeof(cafe), 1, out);
-        fflush(out);
-        fclose(out);
-    }
-    assert(cnt->hits < 10);
-    */
 }
 
 int install_sighand()
