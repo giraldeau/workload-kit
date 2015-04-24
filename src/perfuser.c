@@ -268,7 +268,7 @@ void after_run(struct args *args)
     struct timespec ts = time_sub(&args->t2, &args->t1);
     double elapsed = timespec_to_double_ns(&ts);
 
-    fprintf(args->out, "%d;%d;%d%ld;%ld;%d;%d;%.3f\n", args->nr_thread, args->dryrun,
+    fprintf(args->out, "%d;%d;%d;%ld;%ld;%d;%d;%.3f\n", args->nr_thread, args->dryrun,
             args->period, args->iter_main, args->iter_overhead, args->disable,
             hits, elapsed / 1000000000.0);
     fflush(args->out);
@@ -429,13 +429,20 @@ int do_unwind_overhead_all(struct args *args)
 int do_sampling_overhead(struct args *args)
 {
     int dryrun;
+    int period[] = { 10000, 100000, 1000000 };
+    int period_len = sizeof(period) / sizeof(period[0]);
+    int i;
 
     args->iter_main = args->iter_1ms * 1000;
     args->iter_overhead = 0;
     args->disable = DISABLE_EARLY;
-    for (dryrun = 0; dryrun < 2; dryrun++) {
-        args->dryrun = dryrun;
-        do_one(args);
+    for (i = 0; i < period_len; i++) {
+        for (dryrun = 0; dryrun < 2; dryrun++) {
+            args->dryrun = dryrun;
+            args->period = period[i];
+            args->attr.sample_period = period[i];
+            do_one(args);
+        }
     }
     return 0;
 }
@@ -457,7 +464,7 @@ int do_perf_event_open_overhead(struct args *args)
         .name = "perf_event_open",
         .func = perf_event_open_benchmark,
         .args = &cnt,
-        .repeat = 10000,
+        .repeat = 1000,
     };
 
     profile_combo(&prof);
