@@ -141,6 +141,7 @@ void sigbench_once(long nr, long repeat)
 		CPU_SET(core, &cpuset);
 		sched_setaffinity(gettid(), sizeof(cpuset), &cpuset);
 		struct profile prof = {
+		    .name = "sigbench",
 			.repeat = repeat,
 			.func = sigbench_profile_func,
 		};
@@ -160,6 +161,8 @@ void sigbench_once(long nr, long repeat)
 				elapsed = es;
 		}
 		profile_stats(&prof);
+		profile_stats_print(&prof, stdout);
+		profile_save(&prof);
 		profile_destroy(&prof);
 	}
 	double sec = elapsed / 1000000000.0;

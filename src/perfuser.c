@@ -45,10 +45,12 @@ enum disable_mode {
 
 enum unw_type {
     UNW_TYPE_NONE,
-    UNW_TYPE_ONLINE,
     UNW_TYPE_OFFLINE,
+    UNW_TYPE_OFFLINE_FAST,
     UNW_TYPE_BACKTRACE,
+    UNW_TYPE_MEMCPY,
     UNW_TYPE_LAST,
+    UNW_TYPE_ONLINE,
 };
 
 #define MAX_DEPTH 100
@@ -321,6 +323,28 @@ void do_unwind_offline()
     tracepoint(unwind, offline, (char *) sp, size, &uc);
 }
 
+void do_unwind_offline_fast()
+{
+    size_t size = 4096 * 2;
+    ucontext_t uc;
+    getcontext(&uc);
+    unsigned long sp = ((unsigned long) &uc) - size;
+    tracepoint(unwind, offline_fast, (char *) sp, &uc);
+}
+
+static ucontext_t temp_uc;
+static char temp_stack[8196];
+
+void do_unwind_memcpy()
+{
+    size_t size = 4096 * 2;
+    ucontext_t uc;
+    getcontext(&uc);
+    unsigned long sp = ((unsigned long) &uc) - size;
+    memcpy(&temp_stack, (char *)sp, size);
+    memcpy(&temp_uc, &uc, sizeof(ucontext_t));
+}
+
 void do_unwind_backtrace()
 {
     void *addr[MAX_DEPTH];
@@ -343,7 +367,13 @@ void do_unwind(int type)
     case UNW_TYPE_OFFLINE:
         do_unwind_offline();
         break;
+    case UNW_TYPE_OFFLINE_FAST:
+        do_unwind_offline_fast();
+        break;
     case UNW_TYPE_BACKTRACE:
+        do_unwind_backtrace();
+        break;
+    case UNW_TYPE_MEMCPY:
         do_unwind_backtrace();
         break;
     default:
@@ -394,7 +424,7 @@ int do_unwind_overhead_one(struct args *args)
         .name = "unwind",
         .func = rec,
         .args = args,
-        .repeat = 100000,
+        .repeat = 10000,
     };
 
     if (!done) {
@@ -417,7 +447,7 @@ int do_unwind_overhead_all(struct args *args)
     int type;
 
     for (type = 0; type < UNW_TYPE_LAST; type++) {
-        for (depth = 0; depth < MAX_DEPTH; depth++) {
+        for (depth = 0; depth < MAX_DEPTH; depth += 10) {
             args->unwind_depth = depth;
             args->unwind_type = type;
             do_unwind_overhead_one(args);
@@ -571,8 +601,12 @@ static void parse_opts(int argc, char **argv, struct args *args) {
                 args->unwind_type = UNW_TYPE_ONLINE;
             } else if (strcmp("offline", optarg) == 0) {
                 args->unwind_type = UNW_TYPE_OFFLINE;
+            } else if (strcmp("offline-fast", optarg) == 0) {
+                args->unwind_type = UNW_TYPE_OFFLINE_FAST;
             } else if (strcmp("backtrace", optarg) == 0) {
                 args->unwind_type = UNW_TYPE_BACKTRACE;
+            } else if (strcmp("memcpy", optarg) == 0) {
+                args->unwind_type = UNW_TYPE_MEMCPY;
             }
             break;
         case 'h':
