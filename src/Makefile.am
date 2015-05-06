@@ -1,12 +1,15 @@
 bin_PROGRAMS = wk-ioburst wk-deadlock wk-dthread wk-inception wk-rpc-client \
                wk-rpc-server wk-lockfight wk-cpm1 wk-cpm2 wk-cpm3 wk-pipeline \
                wk-mutex wk-imbalance wk-reparent wk-pipette wk-pulse wk-schedfreq \
-               wk-copymm wk-evfreq wk-sigbench wk-signest wk-timemalloc wk-perfuser
+               wk-copymm wk-evfreq wk-sigbench wk-signest wk-timemalloc wk-stp
 
-wk_perfuser_SOURCES = perfuser.c
-wk_perfuser_CFLAGS = $(UST_CFLAGS)
-wk_perfuser_LDADD = libwk.a -lm $(UNWIND_LIBS) $(UST_LIBS)
-wk_perfuser_LDFLAGS = $(UST_LDFLAGS)
+wk_stp_SOURCES = stp.c
+wk_stp_LDADD = libwk.a -lm
+
+#wk_perfuser_SOURCES = perfuser.c
+#wk_perfuser_CFLAGS = $(UST_CFLAGS)
+#wk_perfuser_LDADD = libwk.a -lm $(UNWIND_LIBS) $(UST_LIBS)
+#wk_perfuser_LDFLAGS = $(UST_LDFLAGS)
 
 wk_timemalloc_SOURCES = timemalloc.c
 wk_timemalloc_LDADD = libwk.a -lm
