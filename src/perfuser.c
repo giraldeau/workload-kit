@@ -502,12 +502,56 @@ int do_perf_event_open_overhead(struct args *args)
     return 0;
 }
 
+int perf_ioctl_benchmark(void *args)
+{
+    int fd = *((int *) args);
+    ioctl(fd, PERF_EVENT_IOC_REFRESH, 1);
+    return 0;
+}
+
+int null_benchmark(void *args)
+{
+    volatile int fd = *((int *) args);
+    return 0;
+}
+
+int do_perf_ioctl(struct args *args)
+{
+    int tid, fd;
+    tid = syscall(__NR_gettid);
+    fd = sys_perf_event_open(&args->attr, tid, -1, -1, 0);
+
+    struct profile prof = {
+        .name = "perf_ioctl",
+        .func = perf_ioctl_benchmark,
+        .args = &fd,
+        .repeat = 10000,
+    };
+
+    struct profile null = {
+        .name = "null_benchmark",
+        .func = null_benchmark,
+        .args = &fd,
+        .repeat = 10000,
+    };
+
+    profile_combo(&null);
+    profile_stats_print(&null, stdout);
+
+    profile_combo(&prof);
+    profile_stats_print(&prof, stdout);
+
+    close(fd);
+    return 0;
+}
+
 static struct exp exps[] = {
     { "handler-work-vs-hits", do_handler_work, before_run, after_run  },
     { "sampling-overhead", do_sampling_overhead, before_run, after_run  },
     { "unwind_all", do_unwind_overhead_all, before_run, after_run },
     { "unwind", do_unwind_overhead_one, before_run, after_run },
     { "perf_event_open", do_perf_event_open_overhead, before_run, after_run },
+    { "perf_ioctl", do_perf_ioctl, before_run, after_run },
     { NULL, NULL },
 };
 
