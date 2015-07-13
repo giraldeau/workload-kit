@@ -216,7 +216,7 @@ if __name__=="__main__":
     fmt = '%(asctime)s %(levelname)s: %(message)s'
     log_level = logging.DEBUG if options.verbose else logging.INFO
     if (options.log is not None):
-        logging.basicConfig(filename=options.log, level=llog_level, format=fmt)
+        logging.basicConfig(filename=options.log, level=log_level, format=fmt)
     else:
         logging.basicConfig(level=log_level, format=fmt)
 
