@@ -16,6 +16,6 @@ gen_trace() {
 		-l $LOG >> $LOG
 }
 
-gen_trace "-k -s" 	$BASE_DIR/kernel
-gen_trace "-u" 		$BASE_DIR/ust
-gen_trace "-u -k -s" 	$BASE_DIR/ust
+gen_trace "-k -s -e addons" 	$BASE_DIR/kernel
+gen_trace "-u -e addons" 		$BASE_DIR/ust
+gen_trace "-u -k -s -e addons" 	$BASE_DIR/ust
