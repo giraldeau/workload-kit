@@ -231,12 +231,14 @@ int rpc_experiment(struct opts *opts, struct cx *cx) {
 		rpc_command(opts, cx, &msg, &ans);
 	}
 
-	FILE *out = fopen("rpc-stats.out", "w+");
-	for (i = 0; i < opts->repeat - 1; i++) {
-		struct timespec ts = time_sub(&data[i + 1], &data[i]);
-		fprintf(out, "%d,%ld.%09ld\n", i, ts.tv_sec, ts.tv_nsec);
+	if (opts->repeat > 1) {
+		FILE *out = fopen("rpc-stats.out", "w+");
+		for (i = 0; i < opts->repeat - 1; i++) {
+			struct timespec ts = time_sub(&data[i + 1], &data[i]);
+			fprintf(out, "%d,%ld.%09ld\n", i, ts.tv_sec, ts.tv_nsec);
+		}
+		fclose(out);
 	}
-	fclose(out);
 	return 0;
 }
 
