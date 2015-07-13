@@ -1,8 +1,10 @@
 *~
 config
+.autotools
 .cproject
 .project
 .pydevproject
+.settings
 config.h
 config.h.in
 stamp-h1
