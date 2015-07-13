@@ -1,0 +1,16 @@
+#!/bin/sh -x
+
+# start server
+wk-rpc-server localhost 1234 &
+SRV_PID=$!
+sleep 2
+
+# hog request
+wk-rpc-client -s localhost -p 1234 -d 100 -c hog
+
+# sleep request
+wk-rpc-client -s localhost -p 1234 -d 100 -c sleep
+
+kill $SRV_PID
+wait
+echo 'done'
