@@ -26,9 +26,11 @@
 #include <linux/module.h>
 #include <linux/proc_fs.h>
 #include <linux/kernel.h>
+#include <linux/rtmutex.h>
 
 static struct proc_dir_entry *wk_file_dentry;
-static spinlock_t wk_spin_lock, priv_spin_lock;
+static spinlock_t priv_spin_lock;
+static struct rt_mutex wk_lock;
 static int locked;
 
 static
@@ -36,7 +38,7 @@ int wk_release(struct inode *inode, struct file *filp)
 {
 	spin_lock(&priv_spin_lock);
 	locked = 0;
-	spin_unlock(&wk_spin_lock);
+	rt_mutex_unlock(&wk_lock);
 	spin_unlock(&priv_spin_lock);
 	printk("wk_lock: unlocked\n");
 
@@ -46,7 +48,7 @@ int wk_release(struct inode *inode, struct file *filp)
 static
 int wk_open(struct inode *inode, struct file *filp)
 {
-	spin_lock(&wk_spin_lock);
+	rt_mutex_lock(&wk_lock);
 	spin_lock(&priv_spin_lock);
 	locked = 1;
 	spin_unlock(&priv_spin_lock);
@@ -67,7 +69,7 @@ int wk_init(void)
 {
 	int ret;
 
-	spin_lock_init(&wk_spin_lock);
+	rt_mutex_init(&wk_lock);
 	spin_lock_init(&priv_spin_lock);
 	wk_file_dentry = proc_create_data("wk_lock",
 			S_IRUGO | S_IWUGO, NULL,
@@ -88,7 +90,7 @@ void wk_exit(void)
 {
 	spin_lock(&priv_spin_lock);
 	if (locked)
-		spin_unlock(&wk_spin_lock);
+		rt_mutex_unlock(&wk_lock);
 
 	if (wk_file_dentry)
 		remove_proc_entry("wk_lock", NULL);
