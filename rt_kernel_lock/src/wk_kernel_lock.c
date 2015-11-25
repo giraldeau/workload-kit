@@ -6,10 +6,10 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <sys/prctl.h>
-#include <urcu/uatomic.h>
 
 int debug = 1;
 static volatile int test_go;
+pthread_barrier_t barrier;
 
 int set_affinity_prio(int cpu, int prio)
 {
@@ -52,17 +52,12 @@ void *highprio0(void *arg)
 		perror("set name");
 	}
 
-	ret = set_affinity_prio(0, 80);
+	ret = set_affinity_prio(0, 90);
 	if (ret) {
 		fprintf(stderr, "highprio0: error setting the priority "
 				"or affinity\n");
 		goto end;
 	}
-
-	/* Wait for lowprio0 to be ready */
-	while(!test_go)
-		usleep(1);
-	cmm_smp_mb();
 
 	print_debug("highprio0 trying to acquire the lock");
 	fd = open("/proc/wk_lock", O_RDONLY);
@@ -110,10 +105,8 @@ void *lowprio1(void *arg)
 	}
 	print_debug("lowprio1 got the lock");
 
-	cmm_smp_mb();
-	/* Allow the other threads to start their work */
-	test_go = 1;
 
+	pthread_barrier_wait(&barrier);
 	while (cnt < 100000000)
 		cnt++;
 
@@ -147,11 +140,6 @@ void *highprio1(void *arg)
 		goto end;
 	}
 
-	/* Wait for lowprio0 to be ready */
-	while(!test_go)
-		usleep(1);
-	cmm_smp_mb();
-
 	print_debug("highprio1 busy looping");
 	while (cnt < 100000000)
 		cnt++;
@@ -166,6 +154,7 @@ int main()
 	int ret;
 	pthread_t highprio0_t, highprio1_t, lowprio1_t;
 
+	pthread_barrier_init(&barrier, NULL, 2);
 	ret = set_affinity_prio(0, 99);
 	if (ret) {
 		fprintf(stderr, "main: error setting the priority "
@@ -179,10 +168,7 @@ int main()
 		goto end;
 	}
 
-	/* Wait for lowprio0 to be ready */
-	while(!test_go)
-		usleep(1);
-	cmm_smp_mb();
+	pthread_barrier_wait(&barrier);
 
 	ret = pthread_create(&highprio1_t, NULL, *highprio1, NULL);
 	if (ret != 0) {
