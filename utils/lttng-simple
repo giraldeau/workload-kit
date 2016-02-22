@@ -33,7 +33,7 @@ current = ""
 default_evlist = "default"
 evlist_search_path = [ os.getenv("PWD"),
                        os.path.join(os.getenv("HOME"), ".workload-kit/"),
-                       os.path.join(os.getenv("WK_PROFILE_DIR")),
+                       os.getenv("WK_PROFILE_DIR"),
                        "/usr/local/share/workload-kit/scripts/profiles/",
                        "/usr/share/workload-kit/scripts/profiles/" ]
 
@@ -41,7 +41,7 @@ def cmd_stub(cmds, check, cmd_env=None, with_shell=False):
     if cmd_env is None:
         cmd_env = os.environ
     logging.debug("LD_PRELOAD=" + cmd_env.get("LD_PRELOAD", ""))
-    logging.debug("exec: " + string.join(cmds, " "))
+    logging.debug("exec: " + " ".join(cmds))
     retcode = 0
     if (dry_run == False):
         retcode = subprocess.call(cmds, stdout=log_stream, stderr=log_stream, env=cmd_env)
@@ -51,7 +51,7 @@ def cmd_stub(cmds, check, cmd_env=None, with_shell=False):
         raise Exception("command failed")
 
 def find_event_file(searchpath, name):
-    print searchpath
+    print(searchpath)
     for dir in searchpath:
         if dir is None:
             continue
@@ -198,7 +198,7 @@ if __name__=="__main__":
         profiles = get_profiles(evlist_search_path)
         print("Available profiles:")
         for p in profiles.keys():
-            print p
+            print(p)
         sys.exit(0)
 
     # try to create base directory if it doesn't exists
@@ -244,7 +244,7 @@ if __name__=="__main__":
                 targets.append(target)
 
     if (len(targets) == 0):
-        print "Error: Nothing to trace!"
+        print("Error: Nothing to trace!")
         parser.print_help()
         sys.exit(1)
     try:
