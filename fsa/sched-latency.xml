@@ -52,16 +52,6 @@
 			</if>
 		</test>
 
-<!-- Test that the task is blocking -->
-		<test id="BLOCKING">
-			<if>
-				<condition op="ne">
-					<stateValue type="eventField" value="prev_tid"/>
-				    <stateAttribute type="long" value="0" />
-				</condition>
-			</if>
-		</test>
-
 <!-- 		ACTIONS -->
 
 <!-- 	Generates three state changes in the state system -->
