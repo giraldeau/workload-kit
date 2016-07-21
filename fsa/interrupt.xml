@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tmfxml xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:noNamespaceSchemaLocation="xmlDefinition.xsd">
+<!-- ***************************************************************************
+* Copyright (c) 2016 Ericsson
+*
+* All rights reserved. This program and the accompanying materials are
+* made available under the terms of the Eclipse Public License v1.0 which
+* accompanies this distribution, and is available at
+* http://www.eclipse.org/legal/epl-v10.html
+*************************************************************************** -->
+    <timeGraphView id="xml.scenarios">
+        <head>
+            <analysis id="Interrupt Latency" />
+            <label value="scenario" />
+        </head>
+
+        <definedValue name="DEFAULT" value="0" color="#CCCCCC"/>
+        <definedValue name="INTERRUPT" value="1" color="#00CCFF"/>
+
+        <!-- Scenario view -->
+        <entry path="scenarios/*">
+            <display type="self" />
+	    <name type="self" />
+            <entry path="*">
+                <display type="constant" value="status" />
+                <name type="self" />
+	    </entry>
+        </entry>
+    </timeGraphView>
+    
+    <pattern version="1" id="Interrupt Latency">
+	<head>
+		<traceType id="org.eclipse.linuxtools.lttng2.kernel.tracetype" />
+		<label value="Interrupt Latency" />
+	</head>
+	
+	<patternHandler>
+
+
+<test id="cpu_condition">
+    <if>
+        <condition>
+            <stateValue type="query" >
+                <stateAttribute type="constant" value="#CurrentScenario" />
+                <stateAttribute type="constant" value="cpu" />
+            </stateValue>
+            <stateValue type="eventField" value="cpu" />
+        </condition>
+    </if>
+</test>
+
+    <action id="cpu_save">
+        <stateChange>
+            <stateAttribute type="constant" value="#CurrentScenario" />
+            <stateAttribute type="constant" value="cpu" />
+            <stateValue type="eventField" value="cpu" />
+        </stateChange>
+    </action>
+
+<!-- 	Generate a pattern segment -->
+		<action id="gen_segment">
+			<segment>
+				<segType>
+					<segName>
+						<stateValue type="query">
+							<stateAttribute type="constant" value="#CurrentScenario" />
+							<stateAttribute type="constant" value="cpu" />
+						</stateValue>
+					</segName>
+				</segType>
+			</segment>
+		</action>
+
+		<fsm id="irq" initial="s0">
+			<state id="s0">
+				<transition event="handle_IRQ_entry"
+                            target="s1"
+                            action="cpu_save"/>
+			</state>
+			<state id="s1">
+				<transition event="handle_IRQ_return"
+                            cond="cpu_condition"
+                            target="end"
+                            action="gen_segment"/>
+			</state>
+			<final id="end" />
+		</fsm>
+	</patternHandler>
+</pattern>
+</tmfxml>
