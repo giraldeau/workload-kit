@@ -6,15 +6,15 @@
 from optparse import OptionParser
 import os
 import sys
-import re
 import subprocess
 import time
 from os.path import join
 import logging
-import string
 from subprocess import CalledProcessError
 import shutil
 import uuid
+from pathlib import Path
+import glob
 
 # the lttng command
 LTTNG="lttng"
@@ -29,6 +29,17 @@ dry_run = False
 log_stream = sys.stdout
 clear_trace = False
 current = ""
+
+minimal_events = [
+    "sched_wakeup",
+    "sched_wakeup_new",
+    "sched_switch",
+    "irq_handler_entry",
+    "irq_handler_exit",
+    "irq_softirq_entry",
+    "irq_softirq_exit",
+    "irq_softirq_raise",
+]
 
 default_evlist = "default"
 evlist_search_path = [ os.getenv("PWD"),
@@ -52,10 +63,10 @@ def cmd_stub(cmds, check, cmd_env=None, with_shell=False):
 
 def find_event_file(searchpath, name):
     print(searchpath)
-    for dir in searchpath:
-        if dir is None:
+    for directory in searchpath:
+        if directory is None:
             continue
-        evfile = os.path.join(dir, name)
+        evfile = os.path.join(directory, name)
         if os.path.exists(evfile):
             return evfile
     return None
@@ -77,18 +88,17 @@ def load_event_list(name):
 
 def get_profiles(searchpath):
     profiles = {}
-    for dir in searchpath:
-        if dir is None:
+    for directory in searchpath:
+        if directory is None:
             continue
-        for dirname, dirnames, filenames in os.walk(dir):
-            for filename in filenames:
-                if (filename.endswith(".list")):
-                    profile = re.sub('\.list$', '', filename)
-                    if not profiles.has_key(profile):
-                        profiles[profile] = dirname
+        items = glob.glob(directory + "/*.list")
+        for item in items:
+            path = Path(item)
+            stem = path.stem
+            profiles[stem] = item
     return profiles
 
-def do_trace(cmd, session, options, kernel, ust):
+def do_trace(cmd, session, options, evlist, kernel, ust):
     if (not (kernel or ust)):
         return
     if (kernel):
@@ -123,7 +133,6 @@ def do_trace(cmd, session, options, kernel, ust):
     add_context = False
     if (kernel):
         cmd_stub([LTTNG, "enable-channel", "k", "-k", "--subbuf-size", "16384", "--num-subbuf", "4096"], True)
-        evlist = load_event_list(options.evlist)
         # enable pid/tid context if there is no sched_switch event
         if (not "sched_switch" in evlist or options.stateless):
             add_context = True
@@ -131,7 +140,7 @@ def do_trace(cmd, session, options, kernel, ust):
         if (options.syscall):
             # do not check the return code, see http://bugs.lttng.org/issues/847
             cmd_stub([LTTNG, "enable-event", "-c", "k", "-a", "-k", "--syscall"], False)
-        if (options.evlist is None or options.enable_all_events):
+        if (options.enable_all_events):
             cmd_stub([LTTNG, "enable-event", "-c", "k", "-a", "-k"], True)
         else:
             for ev in evlist:
@@ -182,7 +191,7 @@ if __name__=="__main__":
     parser.add_option("-d", "--daemon", dest="daemon", default=False, action="store_true", help="Start tracing in background")
     parser.add_option("-l", "--log", dest="log", metavar="FILE", help="Log file", default=None)
     parser.add_option("-n", "--dry-run", dest="dry_run", default=False, action="store_true", help="Do not execute commands")
-    parser.add_option("-e", "--enable-event-list", dest="evlist", default=default_evlist, help="White list of events to enable")
+    parser.add_option("-e", "--enable-event-list", dest="evlist", help="White list of events to enable")
     parser.add_option("--list-profiles", dest="list_profiles", default=False, action="store_true", help="List event profiles")
     parser.add_option("-a", "--all", dest="enable_all_events", default=False, action="store_true", help="Enable all events")
     parser.add_option("--enable-libc-wrapper", dest="libc_wrapper", default=False, action="store_true", help="Enable UST libc wrapper")
@@ -200,6 +209,11 @@ if __name__=="__main__":
         for p in profiles.keys():
             print(p)
         sys.exit(0)
+
+    # Load event list if specified
+    events = minimal_events
+    if options.evlist:
+        events = load_event_list(options.evlist)
 
     # try to create base directory if it doesn't exists
     if not os.path.exists(options.output):
@@ -250,11 +264,11 @@ if __name__=="__main__":
     try:
         for t in targets:
             if (options.ust and options.kernel):
-                do_trace(t["cmd"], t["name"], options, kernel=True, ust=True)
+                do_trace(t["cmd"], t["name"], options, events, kernel=True, ust=True)
             elif (options.kernel):
-                do_trace(t["cmd"], t["name"], options, kernel=True, ust=False)
+                do_trace(t["cmd"], t["name"], options, events, kernel=True, ust=False)
             elif (options.ust):
-                do_trace(t["cmd"], t["name"], options, kernel=False, ust=True)
+                do_trace(t["cmd"], t["name"], options, events, kernel=False, ust=True)
     except Exception as e:
         logging.error(str(e))
         cmd_stub([LTTNG,"destroy", "-a"], False)
